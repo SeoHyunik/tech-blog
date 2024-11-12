@@ -43,8 +43,8 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 	// Google Drive API
-	implementation 'com.google.api-client:google-api-client:1.32.2'
-	implementation 'com.google.oauth-client:google-oauth-client:1.32.1'
+	implementation group: 'com.google.api-client', name: 'google-api-client', version: '2.7.0'
+	implementation group: 'com.google.oauth-client', name: 'google-oauth-client', version: '1.36.0'
 	implementation 'com.google.apis:google-api-services-drive:v3-rev20220307-1.32.1'
 
 	// OpenAI API와의 HTTP 요청 처리
