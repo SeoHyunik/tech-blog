@@ -60,6 +60,9 @@ dependencies {
 	// MySQL 연동
 	implementation 'mysql:mysql-connector-java:8.0.33'
 
+	// Jacatra
+	implementation group: 'jakarta.validation', name: 'jakarta.validation-api', version: '3.1.0'
+
 }
 
 tasks.named('test') {
