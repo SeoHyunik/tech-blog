@@ -23,6 +23,7 @@ public class GlobalExceptionHandler {
         log.error(getLimitedStackTrace(ex));
         return switch(ex.getClass().getSimpleName()) {
             case "NullPointerException", "IllegalArgumentException" -> returnException(HttpStatus.BAD_REQUEST, ex);
+            case "IllegalStateException" -> returnException(HttpStatus.CONFLICT, ex);
             default -> returnException(HttpStatus.INTERNAL_SERVER_ERROR, ex);
         };
     }

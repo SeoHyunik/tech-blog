@@ -10,4 +10,20 @@ spring:
       ddl-auto: update  # Hibernate DDL generation strategy
       show-sql: true  # Show generated SQL queries in logs
     properties:
-      hibernate.dialect: org.hibernate.dialect.MySQLDialect  # Hibernate dialect for MySQL
+      hibernate.dialect: org.hibernate.dialect.MySQLDialect  # Hibernate dialect for MySQ
+    security:
+      oauth2:
+        client:
+          registration:
+            google:
+              client-id: 1071785103707-ajckhp2k9d1am8uk43j1p64g3blita6l.apps.googleusercontent.com
+              client-secret: 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
+              scope:
+                - https://www.googleapis.com/auth/drive.metadata.readonly
+              redirect-uri: "http://localhost:8080/oauth2/callback"
+          provider:
+            google:
+              authorization-uri: https://accounts.google.com/o/oauth2/auth
+              token-uri: https://oauth2.googleapis.com/token
+              user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+    L
