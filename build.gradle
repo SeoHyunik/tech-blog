@@ -57,6 +57,9 @@ dependencies {
 	implementation 'org.projectlombok:lombok'
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
 
+	// MySQL 연동
+	implementation 'mysql:mysql-connector-java:8.0.33'
+
 }
 
 tasks.named('test') {
