@@ -2,7 +2,6 @@ package com.automatic.tech_blog.controller;
 
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
 import com.automatic.tech_blog.dto.response.ApiResponse;
-import com.automatic.tech_blog.dto.service.MdFileLists;
 import com.automatic.tech_blog.service.GoogleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +22,10 @@ public class GoogleDriverController {
     @GetMapping("/scan-files")
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse scanFiles(@RequestBody GoogleAuthInfo authInfo) {
-        MdFileLists mdFileLists = googleService.scanFiles(authInfo);
-        return new ApiResponse(HttpStatus.OK.value(), mdFileLists, new Date(), true);
+        return new ApiResponse(
+            HttpStatus.OK.value(),
+            googleService.scanFiles(authInfo),
+            new Date(),
+            true);
     }
 }
