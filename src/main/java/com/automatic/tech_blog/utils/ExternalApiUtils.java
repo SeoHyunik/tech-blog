@@ -23,18 +23,18 @@ public class ExternalApiUtils {
     public OAuth2AccessToken getAccessToken(GoogleAuthInfo authInfo) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null) {
+        if (authentication == null)
             throw new IllegalStateException("No authenticated user found. Ensure the user is logged in.");
-        }
+
 
         OAuth2AuthorizedClient authorizedClient = authorizedClientService.loadAuthorizedClient(
                 authInfo.clientId(),
                 authentication.getName()
         );
 
-        if (authorizedClient == null) {
+        if (authorizedClient == null)
             throw new IllegalStateException("Authorized client not found. Ensure OAuth2 login has been completed.");
-        }
+
 
         return authorizedClient.getAccessToken();
     }

@@ -36,7 +36,9 @@ public class GoogleServiceImpl implements GoogleService{
       HttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
       JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
       GoogleCredentials credentials = GoogleCredentials.getApplicationDefault();
-      Drive driveService = new Drive.Builder(transport, jsonFactory, new HttpCredentialsAdapter(credentials)).setApplicationName("Tech Blog").build();
+      Drive driveService = new Drive.Builder(transport, jsonFactory, new HttpCredentialsAdapter(credentials))
+          .setApplicationName("Tech Blog")
+          .build();
 
       FileList result = driveService.files().list()
               .setPageSize(10)
