@@ -13,10 +13,12 @@ import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.google.auth.http.HttpCredentialsAdapter;
+import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,26 +36,33 @@ public class GoogleServiceImpl implements GoogleService {
 
   @Override
   public MdFileLists scanFiles(GoogleAuthInfo authInfo) {
-    System.out.println("service init : " + authInfo.toString());
+    System.out.println("Service init: " + authInfo.toString());
 
     try {
       HttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
       JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
 
+      // 1. Load Google Credentials and obtain fresh access token
       GoogleCredentials credentials = externalApi.getGoogleCredentials();
       if (credentials.createScopedRequired()) {
         credentials = credentials.createScoped(Collections.singletonList("https://www.googleapis.com/auth/drive.metadata.readonly"));
       }
+      credentials.refreshIfExpired();
+
+      AccessToken accessToken = credentials.getAccessToken();
+      if (accessToken == null || accessToken.getExpirationTime().before(new Date())) {
+        // 2. Manually refresh token if expired
+        accessToken = externalApi.refreshAccessToken(credentials);
+      }
+
       HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
 
-      System.out.println("credentials : " + credentials);
-
+      // 3. Build the Drive service
       Drive driveService = new Drive.Builder(transport, jsonFactory, requestInitializer)
           .setApplicationName("Tech Blog")
           .build();
 
-      System.out.println("driveService : " + driveService);
-
+      // 4. List files in Google Drive
       FileList result = driveService.files().list()
           .setPageSize(10)
           .setFields("files(id, name)")
