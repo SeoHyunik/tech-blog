@@ -37,21 +37,22 @@ public class GoogleServiceImpl implements GoogleService {
     System.out.println("service init : " + authInfo.toString());
 
     try {
-      // Update HttpTransport to match Google API library version
       HttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
       JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
 
-      // Adjust GoogleCredentials handling to be compatible with Drive API library version
       GoogleCredentials credentials = externalApi.getGoogleCredentials();
       if (credentials.createScopedRequired()) {
         credentials = credentials.createScoped(Collections.singletonList("https://www.googleapis.com/auth/drive.metadata.readonly"));
       }
       HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
 
-      // Ensure the correct version of Drive API library is being used
+      System.out.println("credentials : " + credentials);
+
       Drive driveService = new Drive.Builder(transport, jsonFactory, requestInitializer)
           .setApplicationName("Tech Blog")
           .build();
+
+      System.out.println("driveService : " + driveService);
 
       FileList result = driveService.files().list()
           .setPageSize(10)
