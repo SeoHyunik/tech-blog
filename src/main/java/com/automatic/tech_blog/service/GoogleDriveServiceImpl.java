@@ -7,6 +7,7 @@ import com.automatic.tech_blog.entity.TbMdFiles;
 import com.automatic.tech_blog.enums.ExternalUrls;
 import com.automatic.tech_blog.enums.TargetFolders;
 import com.automatic.tech_blog.repository.MdFileRepository;
+import com.automatic.tech_blog.utils.FunctionUtils;
 import com.automatic.tech_blog.utils.GoogleAuthUtils;
 import com.automatic.tech_blog.utils.GoogleDriveUtils;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
@@ -100,7 +101,7 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
 
           // Update if modifiedAt is different
           if (!mdFileInfo.modifiedAt().equals(fileInfo.getModifiedAt())) {
-            fileInfo.setModifiedAt(mdFileInfo.modifiedAt());
+            fileInfo.setModifiedAt(FunctionUtils.convertGoogleDateTimeToDate(mdFileInfo.modifiedAt()));
             fileInfo.setFileName(mdFileInfo.fileName());
             fileInfo.setFilePath(mdFileInfo.directory());
             mdFileRepository.save(fileInfo);
@@ -112,8 +113,8 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
           entity.setFileId(mdFileInfo.id());
           entity.setFileName(mdFileInfo.fileName());
           entity.setFilePath(mdFileInfo.directory());
-          entity.setCreatedAt(mdFileInfo.createdAt());
-          entity.setModifiedAt(mdFileInfo.modifiedAt());
+          entity.setCreatedAt(FunctionUtils.convertGoogleDateTimeToDate(mdFileInfo.createdAt()));
+          entity.setModifiedAt(FunctionUtils.convertGoogleDateTimeToDate(mdFileInfo.modifiedAt()));
           mdFileRepository.save(entity);
         }
       } catch (DataIntegrityViolationException | ConstraintViolationException e) {

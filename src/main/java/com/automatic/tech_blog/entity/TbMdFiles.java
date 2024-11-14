@@ -1,7 +1,7 @@
 package com.automatic.tech_blog.entity;
 
-import com.google.api.client.util.DateTime;
 import jakarta.persistence.*;
+import java.util.Date;
 import lombok.Data;
 
 
@@ -21,12 +21,12 @@ public class TbMdFiles {
   private String filePath;
 
   @Column(name = "created_at")
-  private DateTime createdAt;
+  private Date createdAt;
 
   @Column(name = "modified_at", nullable = true)
-  private DateTime modifiedAt;
+  private Date modifiedAt;
 
   @Column(name = "deleted_at", nullable = true)
-  private DateTime deletedAt;
+  private Date deletedAt;
 }
 
