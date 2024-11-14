@@ -22,6 +22,7 @@ import com.google.auth.oauth2.GoogleCredentials;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -93,17 +94,23 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
   public String uploadFiles(MdFileLists mdFileLists) {
     mdFileLists.mdFileLists().forEach(mdFileInfo -> {
       try {
-        // Fetch existing record by fileId if exists
+        // Fetch existing record by fileId if it exists
         Optional<TbMdFiles> existingFile = mdFileRepository.findByFileId(mdFileInfo.id());
+
+        Date modifiedAt = FunctionUtils.convertGoogleDateTimeToDate(mdFileInfo.modifiedAt());
+        String newFilePath = mdFileInfo.directory();
 
         if (existingFile.isPresent()) {
           TbMdFiles fileInfo = existingFile.get();
 
-          // Update if modifiedAt is different
-          if (!mdFileInfo.modifiedAt().equals(fileInfo.getModifiedAt())) {
-            fileInfo.setModifiedAt(FunctionUtils.convertGoogleDateTimeToDate(mdFileInfo.modifiedAt()));
-            fileInfo.setFileName(mdFileInfo.fileName());
-            fileInfo.setFilePath(mdFileInfo.directory());
+          // Check if either modifiedAt or filePath has changed
+          boolean isModifiedAtDifferent = !Objects.equals(modifiedAt, fileInfo.getModifiedAt());
+          boolean isFilePathDifferent = !Objects.equals(newFilePath, fileInfo.getFilePath());
+
+          if (isModifiedAtDifferent || isFilePathDifferent) {
+            fileInfo.setModifiedAt(modifiedAt);  // Update modifiedAt only if different
+            fileInfo.setFileName(mdFileInfo.fileName());  // Always update fileName
+            fileInfo.setFilePath(newFilePath);  // Update filePath only if different
             mdFileRepository.save(fileInfo);
             log.info("Updated file with ID: {} and Name: {}", fileInfo.getFileId(), fileInfo.getFileName());
           }
@@ -112,9 +119,9 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
           TbMdFiles entity = new TbMdFiles();
           entity.setFileId(mdFileInfo.id());
           entity.setFileName(mdFileInfo.fileName());
-          entity.setFilePath(mdFileInfo.directory());
+          entity.setFilePath(newFilePath);
           entity.setCreatedAt(FunctionUtils.convertGoogleDateTimeToDate(mdFileInfo.createdAt()));
-          entity.setModifiedAt(FunctionUtils.convertGoogleDateTimeToDate(mdFileInfo.modifiedAt()));
+          entity.setModifiedAt(modifiedAt);
           mdFileRepository.save(entity);
         }
       } catch (DataIntegrityViolationException | ConstraintViolationException e) {
@@ -124,4 +131,5 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
     });
     return "Files uploaded successfully";
   }
+
 }
