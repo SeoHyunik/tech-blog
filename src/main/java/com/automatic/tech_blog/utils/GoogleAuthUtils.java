@@ -2,6 +2,8 @@ package com.automatic.tech_blog.utils;
 
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
 import com.automatic.tech_blog.dto.service.OAuthCredentials;
+import com.automatic.tech_blog.enums.SecuritySpecs;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -33,23 +35,19 @@ import java.util.Map;
 
 @Service
 @Slf4j
-public class ExternalApiUtils {
+public class GoogleAuthUtils {
 
   public GoogleCredentials getGoogleCredentials(GoogleAuthInfo authInfo) {
     try {
-      System.out.println("Step 1: getGoogleCredentials init");
-
-      // Step 1: Decrypt credentials to obtain OAuthCredentials
+      // 1. Decrypt credentials to obtain OAuthCredentials
       OAuthCredentials oauthCredentials = SecurityUtils.decryptCredentials(SecuritySpecs.CREDENTIAL_FILE_PATH.getValue());
-      System.out.println("Step 2: Decrypted OAuthCredentials obtained");
 
-      // Step 2: Compare client ID from authInfo and decrypted OAuthCredentials
+      // 2. Compare client ID from authInfo and decrypted OAuthCredentials
       if (!oauthCredentials.web().client_id().equals(authInfo.clientId())) {
         throw new IllegalArgumentException("Provided client ID does not match the credentials.");
       }
-      System.out.println("Step 3: Client ID matched");
 
-      // Step 3: Set up GoogleClientSecrets with decrypted data
+      // 3. Set up GoogleClientSecrets with decrypted data
       GoogleClientSecrets clientSecrets = new GoogleClientSecrets();
       GoogleClientSecrets.Details details = new GoogleClientSecrets.Details()
           .setClientId(oauthCredentials.web().client_id())
@@ -58,9 +56,8 @@ public class ExternalApiUtils {
           .setTokenUri(oauthCredentials.web().token_uri())
           .setRedirectUris(oauthCredentials.web().redirect_uris());
       clientSecrets.setInstalled(details);
-      System.out.println("Step 4: GoogleClientSecrets setup complete");
 
-      // Step 4: Set up authorization flow
+      // 4. Set up authorization flow
       GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
           GoogleNetHttpTransport.newTrustedTransport(),
           GsonFactory.getDefaultInstance(),
@@ -68,37 +65,33 @@ public class ExternalApiUtils {
           Collections.singletonList(DriveScopes.DRIVE_METADATA_READONLY))
           .setDataStoreFactory(new FileDataStoreFactory(new File(SecuritySpecs.TOKENS_DIRECTORY_PATH.getValue())))
           .setAccessType("offline")
-          .setApprovalPrompt("force")  // 추가된 부분
+          .setApprovalPrompt("force")
           .build();
 
-      System.out.println("Step 5: GoogleAuthorizationCodeFlow setup complete");
 
-      // Step 5: Check for existing credential
+      // 5. Check for existing credential
       Credential credential = flow.loadCredential("user");
       if (credential == null || credential.getRefreshToken() == null) {
-        System.out.println("Step 6: No existing credential or refresh token, proceeding with new authorization");
         // If no existing credential or refresh token, delete StoredCredential and proceed with authorization
-        File storedCredentialFile = new File(SecuritySpecs.TOKENS_DIRECTORY_PATH.getValue() + "/StoredCredential");
+        File storedCredentialFile = new File(SecuritySpecs.TOKENS_DIRECTORY_PATH.getValue() + SecuritySpecs.TOKEN_FILE_NAME.getValue());
         if (storedCredentialFile.exists()) {
           storedCredentialFile.delete();
-          System.out.println("StoredCredential file deleted");
+          log.info("StoredCredential file deleted");
         }
 
         // Proceed with new authorization
         LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
         credential = new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
-        System.out.println("New authorization complete");
 
         // Validate that we received a refresh token
         if (credential.getRefreshToken() == null) {
           throw new IllegalStateException("Refresh token is null. Please ensure offline access is enabled.");
         }
       } else {
-        System.out.println("Existing credential with refresh token found");
+        log.info("Existing credential with refresh token found");
       }
 
-      // Step 6: Convert Credential to GoogleCredentials (supporting automatic refresh)
-      System.out.println("Step 7: Converting Credential to GoogleCredentials");
+      // 6. Convert Credential to GoogleCredentials (supporting automatic refresh)
       return UserCredentials.newBuilder()
           .setClientId(oauthCredentials.web().client_id())
           .setClientSecret(oauthCredentials.web().client_secret())
@@ -111,27 +104,24 @@ public class ExternalApiUtils {
     }
   }
 
+  public AccessToken refreshAccessToken(GoogleCredentials credentials, GoogleAuthInfo authInfo) throws Exception {
 
-
-  public AccessToken refreshAccessToken(GoogleCredentials credentials) throws Exception {
-    // credentials가 UserCredentials로 변환 가능한지 확인 후 refresh token을 사용
+    // 1. Check if credentials are an instance of UserCredentials
     String refreshToken;
-    if (credentials instanceof UserCredentials) {
-      refreshToken = ((UserCredentials) credentials).getRefreshToken();
-    } else {
-      // refresh token이 없을 경우 새로운 자격 증명을 생성
-      credentials = getGoogleCredentials(new GoogleAuthInfo("YOUR_CLIENT_ID"));
-      refreshToken = ((UserCredentials) credentials).getRefreshToken();
+    if (!(credentials instanceof UserCredentials)) {
+      credentials = getGoogleCredentials(new GoogleAuthInfo(authInfo.clientId()));
     }
+    refreshToken = ((UserCredentials) credentials).getRefreshToken();
 
+    // 2. Validate that a refresh token is available
     if (refreshToken == null) {
       throw new IllegalStateException("Refresh token is missing. Ensure offline access is enabled and credentials are refreshed.");
     }
 
-    // Step 1: Decrypt credentials to obtain OAuthCredentials
+    // 3. Decrypt OAuth credentials to obtain OAuth client details
     OAuthCredentials oauthCredentials = SecurityUtils.decryptCredentials(SecuritySpecs.CREDENTIAL_FILE_PATH.getValue());
 
-    // Step 2: Set up GoogleClientSecrets with decrypted data
+    // 4. Set up GoogleClientSecrets with decrypted client details
     GoogleClientSecrets clientSecrets = new GoogleClientSecrets();
     GoogleClientSecrets.Details details = new GoogleClientSecrets.Details()
         .setClientId(oauthCredentials.web().client_id())
@@ -141,7 +131,7 @@ public class ExternalApiUtils {
         .setRedirectUris(oauthCredentials.web().redirect_uris());
     clientSecrets.setInstalled(details);
 
-    // Step 3: Create a POST request to the token endpoint
+    // 5. Prepare POST request parameters for the token endpoint
     HttpRequestFactory requestFactory = new NetHttpTransport().createRequestFactory();
     GenericUrl tokenUrl = new GenericUrl(clientSecrets.getDetails().getTokenUri());
 
@@ -151,13 +141,17 @@ public class ExternalApiUtils {
     params.put("refresh_token", refreshToken);
     params.put("grant_type", "refresh_token");
 
+    // 6. Build and execute the POST request to retrieve a new access token
     HttpRequest request = requestFactory.buildPostRequest(tokenUrl, new UrlEncodedContent(params));
     HttpResponse response = request.execute();
 
-    // Step 4: Handle the response and retrieve new access token
+    // 7. Parse the response to extract the new access token
     if (response.getStatusCode() == 200) {
-      Map<String, Object> responseBody = new ObjectMapper().readValue(response.getContent(), Map.class);
-      String newAccessToken = (String) responseBody.get("access_token");
+      ObjectMapper objectMapper = new ObjectMapper();
+      JsonNode jsonResponse = objectMapper.readTree(response.getContent());
+
+      // Extract access token from JSON response
+      String newAccessToken = jsonResponse.get("access_token").asText();
       return new AccessToken(newAccessToken, null);
     } else {
       throw new IOException("Failed to refresh access token. Status: " + response.getStatusCode());

@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/tech_blog_db?serverTimezone=UTC&useSSL=false  # Database connection URL
+    username: root  # Database username
+    password: gusdlr4150!  # Database password
+  jpa:
+    hibernate:
+      ddl-auto: update  # Hibernate DDL generation strategy
+    show-sql: true  # Show generated SQL queries in logs
+    properties:
+      hibernate.dialect: org.hibernate.dialect.MySQLDialect  # Hibernate dialect for MySQL

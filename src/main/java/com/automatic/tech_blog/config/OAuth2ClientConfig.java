@@ -1,18 +1,14 @@
 package com.automatic.tech_blog.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.automatic.tech_blog.enums.ExternalUrls;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.oidc.OidcScopes;
-
-import java.util.List;
 
 @Configuration
 public class OAuth2ClientConfig {
@@ -26,10 +22,10 @@ public class OAuth2ClientConfig {
     return ClientRegistration.withRegistrationId("google")
         .clientId("${spring.security.oauth2.client.registration.google.client-id}")
         .clientSecret("${spring.security.oauth2.client.registration.google.client-secret}")
-        .scope("openid", "profile", "email", "https://www.googleapis.com/auth/drive.metadata.readonly")
-        .authorizationUri("https://accounts.google.com/o/oauth2/auth")
-        .tokenUri("https://oauth2.googleapis.com/token")
-        .userInfoUri("https://www.googleapis.com/oauth2/v3/userinfo")
+        .scope("openid", "profile", "email", ExternalUrls.GOOGLE_DRIVE_METADATA_READONLY.getUrl())
+        .authorizationUri(ExternalUrls.GOOGLE_AUTHORIZATION_URI.getUrl())
+        .tokenUri(ExternalUrls.GOOGLE_TOKEN_URI.getUrl())
+        .userInfoUri(ExternalUrls.GOOGLE_USER_INFO_URI.getUrl())
         .redirectUri("http://localhost:9000/oauth2/google")
         .clientName("Google")
         .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
@@ -41,5 +37,3 @@ public class OAuth2ClientConfig {
     return new InMemoryOAuth2AuthorizedClientService(clientRegistrationRepository);
   }
 }
-
-

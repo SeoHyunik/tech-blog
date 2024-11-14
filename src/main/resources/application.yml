@@ -17,7 +17,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update  # Hibernate DDL generation strategy
-      show-sql: true  # Show generated SQL queries in logs
+    show-sql: true  # Show generated SQL queries in logs
     properties:
       hibernate.dialect: org.hibernate.dialect.MySQLDialect  # Hibernate dialect for MySQL
   security:

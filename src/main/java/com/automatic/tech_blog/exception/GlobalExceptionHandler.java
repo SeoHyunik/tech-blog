@@ -24,7 +24,7 @@ public class GlobalExceptionHandler {
         return switch (ex.getClass().getSimpleName()) {
             case "NullPointerException", "IllegalArgumentException" ->
                 returnException(HttpStatus.BAD_REQUEST, ex);
-            case "IllegalStateException" ->
+            case "IllegalStateException", "DataIntegrityViolationException" ->
                 returnException(HttpStatus.CONFLICT, ex);
             case "FileNotFoundException" ->
                 returnException(HttpStatus.NOT_FOUND, ex);

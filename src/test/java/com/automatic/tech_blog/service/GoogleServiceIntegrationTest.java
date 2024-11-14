@@ -1,7 +1,7 @@
 package com.automatic.tech_blog.service;
 
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
-import com.automatic.tech_blog.utils.ExternalApiUtils;
+import com.automatic.tech_blog.utils.GoogleAuthUtils;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,10 +15,10 @@ import java.io.IOException;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-class ExternalApiUtilsTest {
+class GoogleAuthUtilsTest {
 
   @InjectMocks
-  private ExternalApiUtils externalApiUtils;
+  private GoogleAuthUtils googleAuthUtils;
 
   private static final String TEST_CLIENT_ID = "1071785103707-pasovui05jidkkls9lp1g7j390f6pr0l.apps.googleusercontent.com";
 
@@ -33,7 +33,7 @@ class ExternalApiUtilsTest {
 
     try {
       // Act: Call the method to get GoogleCredentials
-      GoogleCredentials credentials = externalApiUtils.getGoogleCredentials(authInfo);
+      GoogleCredentials credentials = googleAuthUtils.getGoogleCredentials(authInfo);
 
       // Assert: Check if the returned credentials contain the expected client ID
       assertNotNull(credentials, "Credentials should not be null");
@@ -55,10 +55,10 @@ class ExternalApiUtilsTest {
 
     try {
       // Arrange: Get initial GoogleCredentials
-      GoogleCredentials credentials = externalApiUtils.getGoogleCredentials(authInfo);
+      GoogleCredentials credentials = googleAuthUtils.getGoogleCredentials(authInfo);
 
       // Act: Refresh the access token
-      AccessToken newAccessToken = externalApiUtils.refreshAccessToken(credentials);
+      AccessToken newAccessToken = googleAuthUtils.refreshAccessToken(credentials, authInfo);
 
       // Assert: Check if the new access token is obtained
       assertNotNull(newAccessToken, "New access token should not be null");

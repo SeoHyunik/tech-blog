@@ -1,20 +1,32 @@
 package com.automatic.tech_blog.entity;
 
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import java.sql.Timestamp;
+import com.google.api.client.util.DateTime;
+import jakarta.persistence.*;
 import lombok.Data;
+
 
 @Entity
 @Table(name = "tb_md_files")
 @Data
 public class TbMdFiles {
+
   @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private int id;
+
+  @Column(unique = true, nullable = false)
+  private String fileId;
+
   private String fileName;
   private String filePath;
-  private Timestamp createdAt;
-  private Timestamp modifiedAt;
+
+  @Column(name = "created_at")
+  private DateTime createdAt;
+
+  @Column(name = "modified_at", nullable = true)
+  private DateTime modifiedAt;
+
+  @Column(name = "deleted_at", nullable = true)
+  private DateTime deletedAt;
 }
+

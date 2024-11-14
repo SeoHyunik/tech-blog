@@ -36,6 +36,7 @@ public class JsonEncryptorDecryptor {
     String encryptedJson = encrypt(jsonContent, secretKey);
     System.out.println("Encrypted JSON: " + encryptedJson);
 
+
     // Step 5: Save the encrypted JSON to a txt file
     String directoryPath = "src/main/resources/encrypted";
     saveEncryptedJsonToFile(encryptedJson, directoryPath);
