@@ -35,3 +35,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# Ignore the env directory
+env/
+src/main/java/com/automatic/tech_blog/internal/
+src/main/resources/

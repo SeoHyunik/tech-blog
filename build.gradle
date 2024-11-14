@@ -67,6 +67,9 @@ dependencies {
 	// Jacatra
 	implementation group: 'jakarta.validation', name: 'jakarta.validation-api', version: '3.1.0'
 
+	// Security
+	implementation group: 'io.github.cdimascio', name: 'java-dotenv', version: '5.2.2'
+
 }
 
 tasks.named('test') {

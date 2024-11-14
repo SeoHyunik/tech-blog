@@ -21,10 +21,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
         log.error(getLimitedStackTrace(ex));
-        return switch(ex.getClass().getSimpleName()) {
-            case "NullPointerException", "IllegalArgumentException" -> returnException(HttpStatus.BAD_REQUEST, ex);
-            case "IllegalStateException" -> returnException(HttpStatus.CONFLICT, ex);
-            default -> returnException(HttpStatus.INTERNAL_SERVER_ERROR, ex);
+        return switch (ex.getClass().getSimpleName()) {
+            case "NullPointerException", "IllegalArgumentException" ->
+                returnException(HttpStatus.BAD_REQUEST, ex);
+            case "IllegalStateException" ->
+                returnException(HttpStatus.CONFLICT, ex);
+            case "FileNotFoundException" ->
+                returnException(HttpStatus.NOT_FOUND, ex);
+            default ->
+                returnException(HttpStatus.INTERNAL_SERVER_ERROR, ex);
         };
     }
 

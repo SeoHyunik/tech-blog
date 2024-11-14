@@ -15,8 +15,10 @@ import com.google.api.services.drive.model.FileList;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
-import com.google.auth.oauth2.ServiceAccountCredentials;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +45,7 @@ public class GoogleServiceImpl implements GoogleService {
       JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
 
       // 1. Load Google Credentials and obtain fresh access token
-      GoogleCredentials credentials = externalApi.getGoogleCredentials();
+      GoogleCredentials credentials = externalApi.getGoogleCredentials(authInfo);
       if (credentials.createScopedRequired()) {
         credentials = credentials.createScoped(Collections.singletonList("https://www.googleapis.com/auth/drive.metadata.readonly"));
       }
@@ -51,37 +53,72 @@ public class GoogleServiceImpl implements GoogleService {
 
       AccessToken accessToken = credentials.getAccessToken();
       if (accessToken == null || accessToken.getExpirationTime().before(new Date())) {
-        // 2. Manually refresh token if expired
         accessToken = externalApi.refreshAccessToken(credentials);
       }
 
       HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
 
-      // 3. Build the Drive service
+      // 2. Build the Drive service
       Drive driveService = new Drive.Builder(transport, jsonFactory, requestInitializer)
           .setApplicationName("Tech Blog")
           .build();
 
-      // 4. List files in Google Drive
-      FileList result = driveService.files().list()
-          .setPageSize(10)
-          .setFields("files(id, name)")
-          .execute();
-      List<File> files = result.getFiles();
+      // 3. Find specific directories and scan for .md files in them
+      List<String> targetFolders = Arrays.asList("Algorithm", "IT Knowledge", "JAVA-SPRING", "Notes");
       List<MdFileInfo> mdFileInfos = new ArrayList<>();
 
-      if (files == null || files.isEmpty()) {
-        log.info("No files found.");
-      } else {
-        for (File file : files) {
-          log.info("File Name: {}, File Id: {}", file.getName(), file.getId());
-          mdFileInfos.add(new MdFileInfo(file.getName(), file.getId()));
+      for (String folderName : targetFolders) {
+        // Find the target directory by name
+        String folderId = findFolderIdByName(driveService, folderName);
+        if (folderId != null) {
+          // If folder is found, scan for .md files within it
+          findMdFilesInDirectory(driveService, folderId, mdFileInfos, folderName);
+        } else {
+          System.out.println("Folder " + folderName + " not found.");
         }
       }
+
       return new MdFileLists(mdFileInfos);
     } catch (Exception e) {
       log.error("Error occurred while scanning files from Google Drive: {}", e.getMessage(), e);
       throw new IllegalStateException("Error occurred while scanning files from Google Drive", e);
     }
   }
+
+  /**
+   * Finds the folder ID by name in Google Drive.
+   */
+  private String findFolderIdByName(Drive driveService, String folderName) throws IOException {
+    FileList result = driveService.files().list()
+        .setQ("mimeType = 'application/vnd.google-apps.folder' and name = '" + folderName + "'")
+        .setFields("files(id, name)")
+        .execute();
+
+    List<File> files = result.getFiles();
+    if (files != null && !files.isEmpty()) {
+      return files.get(0).getId();  // Return the ID of the first matched folder
+    }
+    return null;
+  }
+
+  /**
+   * Scans for .md files within a given directory ID and adds them to the result list.
+   */
+  private void findMdFilesInDirectory(Drive driveService, String directoryId, List<MdFileInfo> mdFileInfos, String parentFolderName) throws IOException {
+    FileList result = driveService.files().list()
+        .setQ("'" + directoryId + "' in parents and mimeType != 'application/vnd.google-apps.folder'")
+        .setFields("files(id, name)")
+        .execute();
+
+    List<File> files = result.getFiles();
+    if (files != null && !files.isEmpty()) {
+      for (File file : files) {
+        if (file.getName().endsWith(".md")) {
+          String fileName = file.getName(); // 별도 인코딩 변환 없이 그대로 사용
+          mdFileInfos.add(new MdFileInfo(fileName, file.getId(), parentFolderName));  // Add folder name
+        }
+      }
+    }
+  }
+
 }

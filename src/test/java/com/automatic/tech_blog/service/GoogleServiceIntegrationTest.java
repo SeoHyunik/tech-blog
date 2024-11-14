@@ -1,36 +1,74 @@
 package com.automatic.tech_blog.service;
 
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
-import com.automatic.tech_blog.dto.service.MdFileLists;
+import com.automatic.tech_blog.utils.ExternalApiUtils;
+import com.google.auth.oauth2.AccessToken;
+import com.google.auth.oauth2.GoogleCredentials;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.InjectMocks;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.io.IOException;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class GoogleServiceIntegrationTest {
+import static org.junit.jupiter.api.Assertions.*;
 
-  @Autowired
-  private GoogleService googleService;
+@SpringBootTest
+class ExternalApiUtilsTest {
+
+  @InjectMocks
+  private ExternalApiUtils externalApiUtils;
+
+  private static final String TEST_CLIENT_ID = "1071785103707-pasovui05jidkkls9lp1g7j390f6pr0l.apps.googleusercontent.com";
+
+  @BeforeEach
+  public void setup() {
+    MockitoAnnotations.openMocks(this);
+  }
 
   @Test
-  void testGoogleScanFilesIntegration() {
-    // Given: Google 인증 정보를 생성합니다.
-    GoogleAuthInfo authInfo = new GoogleAuthInfo(
-        "1071785103707-ajckhp2k9d1am8uk43j1p64g3blita6l.apps.googleusercontent.com",
-        "xx"
-    );
+  void testGetGoogleCredentials() {
+    GoogleAuthInfo authInfo = new GoogleAuthInfo(TEST_CLIENT_ID);
 
-    // When: 실제 Google Drive API와 통신합니다.
-    MdFileLists fileLists = googleService.scanFiles(authInfo);
+    try {
+      // Act: Call the method to get GoogleCredentials
+      GoogleCredentials credentials = externalApiUtils.getGoogleCredentials(authInfo);
 
-    // Then: 파일 리스트가 정상적으로 반환되었는지 확인합니다.
-    assertThat(fileLists).isNotNull();
+      // Assert: Check if the returned credentials contain the expected client ID
+      assertNotNull(credentials, "Credentials should not be null");
 
-    // 응답 본문 출력
-    fileLists.mdFileLists().forEach(file ->
-        System.out.printf("File Name: %s, File Id: %s%n", file.fileName(), file.directory())
-    );
+      // Assert: Check if credentials contain an access token
+      AccessToken accessToken = credentials.getAccessToken();
+      assertNotNull(accessToken, "Access token should not be null");
+      assertNotNull(accessToken.getTokenValue(), "Access token value should not be null");
+
+      System.out.println("Access Token: " + accessToken.getTokenValue());
+    } catch (Exception e) {
+      fail("Exception should not be thrown: " + e.getMessage());
+    }
+  }
+
+  @Test
+  void testRefreshAccessToken() {
+    GoogleAuthInfo authInfo = new GoogleAuthInfo(TEST_CLIENT_ID);
+
+    try {
+      // Arrange: Get initial GoogleCredentials
+      GoogleCredentials credentials = externalApiUtils.getGoogleCredentials(authInfo);
+
+      // Act: Refresh the access token
+      AccessToken newAccessToken = externalApiUtils.refreshAccessToken(credentials);
+
+      // Assert: Check if the new access token is obtained
+      assertNotNull(newAccessToken, "New access token should not be null");
+      assertNotNull(newAccessToken.getTokenValue(), "New access token value should not be null");
+
+      System.out.println("New Access Token: " + newAccessToken.getTokenValue());
+    } catch (IOException e) {
+      fail("IOException should not be thrown: " + e.getMessage());
+    } catch (Exception e) {
+      fail("Exception should not be thrown: " + e.getMessage());
+    }
   }
 }
