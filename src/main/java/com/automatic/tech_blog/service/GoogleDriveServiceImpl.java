@@ -55,11 +55,6 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
       }
       credentials.refreshIfExpired();
 
-      AccessToken accessToken = credentials.getAccessToken();
-      if (accessToken == null || accessToken.getExpirationTime().before(new Date())) {
-        accessToken = authUtils.refreshAccessToken(credentials, authInfo);
-      }
-
       HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(credentials);
 
       // 2. Build the Drive service
@@ -72,14 +67,10 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
       List<MdFileInfo> mdFileInfos = new ArrayList<>();
 
       for (String folderName : targetFolders) {
-        // Find the target directory by name
+        // 4. Find the target directory by name
         String folderId = driveUtils.findFolderIdByName(driveService, folderName);
-        if (folderId != null) {
-          // If folder is found, scan for .md files within it
+        if (folderId != null)  // 5. If folder is found, scan for .md files within it
           driveUtils.findMdFilesInDirectory(driveService, folderId, mdFileInfos, folderName);
-        } else {
-          log.error("Folder {} not found.", folderName);
-        }
       }
 
       return new MdFileLists(mdFileInfos);

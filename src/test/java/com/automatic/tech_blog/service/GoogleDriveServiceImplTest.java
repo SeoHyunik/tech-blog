@@ -3,11 +3,14 @@ package com.automatic.tech_blog.service;
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
 import com.automatic.tech_blog.dto.service.MdFileLists;
 import com.automatic.tech_blog.utils.GoogleAuthUtils;
+import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -28,8 +31,15 @@ class GoogleDriveServiceImplTest {
 
   @BeforeEach
   public void setUp() {
+    MDC.put("logUUID", UUID.randomUUID().toString());
     MockitoAnnotations.openMocks(this);
     authInfo = new GoogleAuthInfo("1071785103707-pasovui05jidkkls9lp1g7j390f6pr0l.apps.googleusercontent.com"); // 실제 GoogleAuthInfo 값 입력
+  }
+
+  @AfterEach
+  void tearDown() {
+    // 테스트 후 MDC 초기화
+    MDC.clear();
   }
 
   @Test

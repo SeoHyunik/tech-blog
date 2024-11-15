@@ -39,4 +39,5 @@ out/
 # Ignore the env directory
 env/
 src/main/java/com/automatic/tech_blog/internal/
+src/main/java/com/automatic/tech_blog/enums/SecuritySpecs.java
 src/main/resources/
