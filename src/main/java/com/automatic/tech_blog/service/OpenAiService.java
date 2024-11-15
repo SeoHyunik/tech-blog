@@ -5,10 +5,7 @@ import com.automatic.tech_blog.dto.service.MdFileLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import java.util.List;
 
-public interface GoogleDriveService {
-  MdFileLists scanFiles(GoogleAuthInfo authInfo);
+public interface OpenAiService {
 
-  List<ProcessedDataList> uploadFiles(MdFileLists mdFileLists);
-
-  MdFileLists getNewFiles();
+  public List<ProcessedDataList> editTechNotes(MdFileLists mdFileLists, GoogleAuthInfo googleAuthInfo);
 }

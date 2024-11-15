@@ -41,4 +41,15 @@ public class GoogleDriveController {
             new Date(),
             true);
     }
+
+    /*TODO : Return file lists that is newly made or modified*/
+    @GetMapping("/new-files")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse getNewFiles() {
+        return new ApiResponse(
+            HttpStatus.OK.value(),
+            googleDriveService.getNewFiles(),
+            new Date(),
+            true);
+    }
 }

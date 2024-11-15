@@ -2,7 +2,9 @@ package com.automatic.tech_blog.service;
 
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
 import com.automatic.tech_blog.dto.service.MdFileLists;
+import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.utils.GoogleAuthUtils;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,10 +59,28 @@ class GoogleDriveServiceImplTest {
     });
 
     // Act - Upload scanned files to the database
-    String result = googleService.uploadFiles(mdFileLists);
+    List<ProcessedDataList> result = googleService.uploadFiles(mdFileLists);
 
     // Assert - Check if the upload was successful
     assertNotNull(result, "Upload result should not be null");
     System.out.println("Upload Result: " + result);
+  }
+  @Test
+  void testGetNewFiles() {
+    // Act - Retrieve new or modified files
+    MdFileLists newFiles = googleService.getNewFiles();
+
+    // Assert - Check if the returned file list is not null and contains expected files
+    assertNotNull(newFiles, "New files list should not be null");
+    newFiles.mdFileLists().forEach(file -> {
+      System.out.println("New File Name: " + file.fileName() +
+          ", File Id: " + file.id() +
+          ", Directory: " + file.directory() +
+          ", Created At: " + file.createdAt() +
+          ", Modified At: " + file.modifiedAt());
+    });
+
+    // Optional: Additional checks for file properties or specific conditions
+    assert (!newFiles.mdFileLists().isEmpty()) : "New files list should not be empty";
   }
 }
