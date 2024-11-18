@@ -28,12 +28,12 @@ public class JsonEncryptorDecryptor {
     SecretKey secretKey = decodeSecretKey(secretKeyBase64);
 
     // Step 3: Load the original JSON file
-    String jsonFilePath = "src/main/resources/etc/credentials.json";
-    File jsonFile = new File(jsonFilePath);
-    String jsonContent = new String(Files.readAllBytes(jsonFile.toPath()));
+//    String jsonFilePath = "src/main/resources/etc/credentials.json";
+//    File jsonFile = new File(jsonFilePath);
+//    String jsonContent = new String(Files.readAllBytes(jsonFile.toPath()));
 
     // Step 4: Encrypt the JSON content using the secret key
-    String encryptedJson = encrypt(jsonContent, secretKey);
+    String encryptedJson = encrypt("", secretKey);
     System.out.println("Encrypted JSON: " + encryptedJson);
 
 
@@ -114,7 +114,7 @@ public class JsonEncryptorDecryptor {
     if (!directory.exists()) {
       directory.mkdirs();
     }
-    File file = new File(directory, "encrypted_credentials.txt");
+    File file = new File(directory, "openai_api_key.txt");
     try (FileOutputStream fos = new FileOutputStream(file)) {
       fos.write(encryptedJson.getBytes());
     }

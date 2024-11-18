@@ -22,7 +22,7 @@ public class OAuth2ClientConfig {
     return ClientRegistration.withRegistrationId("google")
         .clientId("${spring.security.oauth2.client.registration.google.client-id}")
         .clientSecret("${spring.security.oauth2.client.registration.google.client-secret}")
-        .scope("openid", "profile", "email", ExternalUrls.GOOGLE_DRIVE_METADATA_READONLY.getUrl())
+        .scope("openid", "profile", "email", ExternalUrls.GOOGLE_DRIVE_READONLY.getUrl())
         .authorizationUri(ExternalUrls.GOOGLE_AUTHORIZATION_URI.getUrl())
         .tokenUri(ExternalUrls.GOOGLE_TOKEN_URI.getUrl())
         .userInfoUri(ExternalUrls.GOOGLE_USER_INFO_URI.getUrl())

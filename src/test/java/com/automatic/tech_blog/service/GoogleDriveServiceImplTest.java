@@ -15,6 +15,9 @@ import org.mockito.MockitoAnnotations;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
@@ -22,12 +25,18 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 class GoogleDriveServiceImplTest {
 
+  @MockBean
+  private WebClient webClient;
   @Mock
   private GoogleAuthUtils externalApi;
 
   @InjectMocks
   @Autowired
   private GoogleDriveServiceImpl googleService;
+
+  @InjectMocks
+  @Autowired
+  private OpenAiServiceImpl openAiService;
 
   private GoogleAuthInfo authInfo;
 
@@ -82,5 +91,10 @@ class GoogleDriveServiceImplTest {
 
     // Optional: Additional checks for file properties or specific conditions
     assert (!newFiles.mdFileLists().isEmpty()) : "New files list should not be empty";
+
+    List<ProcessedDataList> processedDataLists = openAiService.editTechNotes(newFiles, authInfo);
+
+    System.out.println("Processed Data Lists: " + processedDataLists);
   }
+
 }

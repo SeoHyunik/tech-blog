@@ -1,6 +1,8 @@
 package com.automatic.tech_blog.utils;
 
+import com.automatic.tech_blog.dto.request.ApiRequest;
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
+import com.automatic.tech_blog.dto.request.OpenAiRequest;
 import com.automatic.tech_blog.dto.service.MdFileInfo;
 import com.automatic.tech_blog.enums.ExternalUrls;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
@@ -12,21 +14,29 @@ import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.gson.Gson;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class GoogleDriveUtils {
   private final GoogleAuthUtils authUtils;
+  private final ExternalApiUtils apiUtils;
 
   /**
   * Create GoogleCredentials for Google Drive service
@@ -39,7 +49,7 @@ public class GoogleDriveUtils {
     // Load credentials and refresh token
     GoogleCredentials credentials = authUtils.getGoogleCredentials(authInfo);
     if (credentials.createScopedRequired()) {
-      credentials = credentials.createScoped(Collections.singletonList(ExternalUrls.GOOGLE_DRIVE_METADATA_READONLY.getUrl()));
+      credentials = credentials.createScoped(Collections.singletonList(ExternalUrls.GOOGLE_DRIVE_READONLY.getUrl()));
     }
     credentials.refreshIfExpired();
 
@@ -94,8 +104,14 @@ public class GoogleDriveUtils {
   /**
    * Retrieves the content of a file from Google Drive.
    */
-  public String getFileContent(Drive driveService, String fileId) {
+  public String getFileContent(Drive driveService, String fileId, GoogleAuthInfo googleAuthInfo) {
     try {
+      // Get GoogleCredentials
+      GoogleCredentials credentials = authUtils.getGoogleCredentials(googleAuthInfo);
+      String accessToken = credentials.getAccessToken().getTokenValue();
+      // Add permission to read the file content
+      addPermissionToFile(fileId, accessToken);
+
       ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
       // Execute file content retrieval
       driveService.files().get(fileId).executeMediaAndDownloadTo(outputStream);
@@ -106,4 +122,56 @@ public class GoogleDriveUtils {
     }
   }
 
+  private void addPermissionToFile(String fileId, String accessToken) throws IOException {
+    try {
+      String url = "https://www.googleapis.com/drive/v3/files/" + fileId + "/permissions";
+
+      // Set HTTP headers
+      HttpHeaders headers = new HttpHeaders();
+      headers.add("Authorization", "Bearer " + accessToken);
+      headers.add("Content-Type", "application/json");
+
+      // Set request body
+      Map<String, String> authType = Map.of(
+          "role", "reader", // Authorize as reader
+          "type", "anyone"  // Allow anyone to read
+      );
+
+      // Convert Map to JSON
+      Gson gson = new Gson();
+      String requestBody = gson.toJson(authType);
+
+      // Prepare API request
+      ApiRequest apiRequest = new ApiRequest(
+          HttpMethod.POST,
+          headers,
+          url,
+          requestBody
+      );
+
+      // Call API
+      ResponseEntity<String> response = apiUtils.callAPI(apiRequest);
+
+      // Log and check the response
+      if (response == null) {
+        throw new IllegalStateException("Failed to add permission to file. Response is null.");
+      }
+
+      if (!response.getStatusCode().is2xxSuccessful()) {
+        throw new IllegalStateException("Failed to add permission to file. Response: " + response.getBody());
+      }
+
+      System.out.println("Permission added successfully: " + response.getBody());
+
+    } catch (HttpClientErrorException | HttpServerErrorException e) {
+      // Log the API error response
+      System.err.println("Google Drive API 호출 중 HTTP 오류 발생: " + e.getResponseBodyAsString());
+      throw new IllegalStateException("Google Drive API HTTP 오류", e);
+
+    } catch (Exception e) {
+      // Log unexpected exceptions
+      System.err.println("예상치 못한 오류 발생: " + e.getMessage());
+      throw new IllegalStateException("Failed to add permission to file", e);
+    }
+  }
 }

@@ -4,7 +4,8 @@ public enum ExternalUrls {
   GOOGLE_AUTHORIZATION_URI("https://accounts.google.com/o/oauth2/auth"),
   GOOGLE_TOKEN_URI("https://oauth2.googleapis.com/token"),
   GOOGLE_USER_INFO_URI("https://www.googleapis.com/oauth2/v3/userinfo"),
-  GOOGLE_DRIVE_METADATA_READONLY("https://www.googleapis.com/auth/drive.metadata.readonly");
+  GOOGLE_DRIVE_READONLY("https://www.googleapis.com/auth/drive"),
+  OPEN_AI_COMPLETION_URI("https://api.openai.com/v1/chat/completions");
 
   private final String url;
 

@@ -12,8 +12,8 @@ spring:
   servlet:
     encoding:
       charset: UTF-8
-      force: true
-      force-response: true
+        force: true
+        force-response: true
   jpa:
     hibernate:
       ddl-auto: update  # Hibernate DDL generation strategy
