@@ -1,6 +1,6 @@
 package com.automatic.tech_blog.utils;
 
-import com.automatic.tech_blog.dto.request.ApiRequest;
+import com.automatic.tech_blog.dto.request.ExternalApiRequest;
 import com.automatic.tech_blog.dto.request.OpenAiRequest;
 import com.automatic.tech_blog.dto.response.OpenAiResponse;
 import com.automatic.tech_blog.enums.ExternalUrls;
@@ -25,10 +25,10 @@ public class OpenAiUtils {
   public OpenAiResponse generateHtmlFromMarkdown(OpenAiRequest openAiRequest) {
     try {
       // 1. Build API request
-      ApiRequest apiRequest = buildApiRequest(openAiRequest);
+      ExternalApiRequest externalApiRequest = buildApiRequest(openAiRequest);
 
       // 2. Call OpenAI API and get the response
-      ResponseEntity<String> response = apiUtils.callAPI(apiRequest);
+      ResponseEntity<String> response = apiUtils.callAPI(externalApiRequest);
 
       // 3. Validate response
       if (response.getBody() == null)
@@ -64,14 +64,14 @@ public class OpenAiUtils {
     }
   }
 
-  private ApiRequest buildApiRequest(OpenAiRequest openAiRequest) {
+  private ExternalApiRequest buildApiRequest(OpenAiRequest openAiRequest) {
     // 1. Set HTTP headers
     HttpHeaders headers = new HttpHeaders();
     headers.add("Authorization", "Bearer " + openAiRequest.api_key());
     headers.add("Content-Type", "application/json");
 
     // 2. Create and return ApiRequest
-    return new ApiRequest(
+    return new ExternalApiRequest(
         HttpMethod.POST,
         headers,
         ExternalUrls.OPEN_AI_COMPLETION_URI.getUrl(),

@@ -1,13 +1,12 @@
 package com.automatic.tech_blog.utils;
 
-import com.automatic.tech_blog.dto.request.ApiRequest;
+import com.automatic.tech_blog.dto.request.ExternalApiRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Mono;
 
 import java.util.Objects;
 
@@ -17,7 +16,7 @@ import java.util.Objects;
 public class ExternalApiUtils {
   private final WebClient.Builder webClientBuilder;
 
-  public ResponseEntity<String> callAPI(ApiRequest request) {
+  public ResponseEntity<String> callAPI(ExternalApiRequest request) {
     try {
       // 1. Validate the API request
       validateRequest(request);
@@ -53,7 +52,7 @@ public class ExternalApiUtils {
     }
   }
 
-  private void validateRequest(ApiRequest request) {
+  private void validateRequest(ExternalApiRequest request) {
     if (request == null)
       throw new IllegalArgumentException("ApiRequest cannot be null.");
 
@@ -64,7 +63,7 @@ public class ExternalApiUtils {
       throw new IllegalArgumentException("URL cannot be null or empty.");
   }
 
-  private void logRequest(ApiRequest request) {
+  private void logRequest(ExternalApiRequest request) {
     log.info(
         "API Request: method={}, url={}, headers={}, body={}",
         request.method(),
