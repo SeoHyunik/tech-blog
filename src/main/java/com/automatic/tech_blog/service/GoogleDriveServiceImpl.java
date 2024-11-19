@@ -34,18 +34,18 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
   @Override
   public MdFileLists scanFiles(GoogleAuthInfo authInfo) {
     try {
-      // Step 1: Create the Drive service
+      // 1. Create the Drive service
       Drive driveService = driveUtils.createDriveService(authInfo, "kiwijam");
 
-      // Step 2: Scan for .md files in specific directories
+      // 2. Scan for .md files in specific directories
       List<String> targetFolders = TargetFolders.getFolderNames();
       List<MdFileInfo> mdFileInfos = new ArrayList<>();
 
       for (String folderName : targetFolders) {
-        // Find the target directory by name
+        // 3. Find the target directory by name
         String folderId = driveUtils.findFolderIdByName(driveService, folderName);
         if (folderId != null) {
-          // If folder is found, scan for .md files within it
+          // 4. If folder is found, scan for .md files within it
           driveUtils.findMdFilesInDirectory(driveService, folderId, mdFileInfos, folderName);
         } else {
           log.warn("Folder {} not found.", folderName);

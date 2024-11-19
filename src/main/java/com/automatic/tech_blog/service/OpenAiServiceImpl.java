@@ -11,11 +11,13 @@ import com.automatic.tech_blog.enums.SecuritySpecs;
 import com.automatic.tech_blog.utils.GoogleDriveUtils;
 import com.automatic.tech_blog.utils.OpenAiUtils;
 import com.automatic.tech_blog.utils.SecurityUtils;
-import com.google.api.client.json.Json;
 import com.google.api.services.drive.Drive;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,9 +42,31 @@ public class OpenAiServiceImpl implements OpenAiService {
       // 1. Create the Drive service
       Drive driveService = googleDriveUtils.createDriveService(googleAuthInfo, "kiwijam");
 
-      // 2. Process each Markdown file in the list
+      // 2. Scan the local directory for existing HTML files
+      Path outputDir = Paths.get(InternalPaths.HTML_SAVE_DIR.getPath());
+      if (!Files.exists(outputDir)) {
+        Files.createDirectories(outputDir);
+      }
+
+      Set<String> existingHtmlFiles;
+      try (Stream<Path> stream = Files.list(outputDir)) {
+        existingHtmlFiles = stream.filter(path -> path.toString().endsWith(".html"))
+            .map(path -> path.getFileName().toString())
+            .collect(Collectors.toSet());
+      }
+
+      // 3. Process each Markdown file in the list
       List<ProcessedDataList> processedData = new ArrayList<>();
       for (MdFileInfo mdFileInfo : mdFileLists.mdFileLists()) {
+        String htmlFileName = mdFileInfo.fileName().replace(".md", ".html");
+
+        // Skip processing if the HTML file already exists locally
+        if (existingHtmlFiles.contains(htmlFileName)) {
+          log.info("HTML file already exists. Skipping processing for: {}", htmlFileName);
+          continue;
+        }
+
+        // Fetch file content from Google Drive
         String fileContent = googleDriveUtils.getFileContent(driveService, mdFileInfo.id(), googleAuthInfo);
 
         if (fileContent != null) {
@@ -57,6 +81,8 @@ public class OpenAiServiceImpl implements OpenAiService {
       throw new IllegalStateException("Failed to edit tech notes", e);
     }
   }
+
+
 
   private ProcessedDataList transformMarkdownToHtml(String markdownContent, String fileName) {
     try {
@@ -130,17 +156,23 @@ public class OpenAiServiceImpl implements OpenAiService {
 
   private void saveHtmlToLocal(String htmlContent, String fileName) {
     try {
-      // Ensure the directory exists
+      // 1. Ensure the directory exists
       Path outputDir = Paths.get(InternalPaths.HTML_SAVE_DIR.getPath());
       if (!Files.exists(outputDir)) {
         Files.createDirectories(outputDir);
       }
 
-      // Generate the full file path
+      // 2. Generate the full file path
       String sanitizedFileName = fileName.replace(".md", ".html");
       Path outputPath = outputDir.resolve(sanitizedFileName);
 
-      // Write the HTML content to the file
+      // 3. Check if the file already exists
+      if (Files.exists(outputPath)) {
+        log.info("File already exists. Skipping save: {}", outputPath);
+        return;
+      }
+
+      // 4. Write the HTML content to the file
       Files.writeString(outputPath, htmlContent);
 
       log.info("HTML saved to {}", outputPath);
@@ -149,4 +181,5 @@ public class OpenAiServiceImpl implements OpenAiService {
       throw new IllegalStateException("Failed to save HTML file locally", e);
     }
   }
+
 }

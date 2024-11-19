@@ -50,7 +50,8 @@ public class JsonEncryptorDecryptor {
     // Create the 'env' directory if it doesn't exist
     File envDir = new File(ENV_DIR_PATH);
     if (!envDir.exists()) {
-      envDir.mkdirs();
+      boolean isNewDir = envDir.mkdirs();
+      System.out.println("env directory created: " + isNewDir);
     }
 
     // Create .env file with Secret Key if it doesn't exist

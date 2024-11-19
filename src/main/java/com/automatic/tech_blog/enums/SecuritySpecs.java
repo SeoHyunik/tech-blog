@@ -6,7 +6,6 @@ public enum SecuritySpecs {
   ENV_DIR_PATH("env"),
   ENV_KEY_NAME("SECRET_KEY_BASE64"),
   CREDENTIAL_FILE_PATH("src/main/resources/encrypted/encrypted_credentials.txt"),
-  OPEN_AI_API_KEY_FILE_PATH("src/main/resources/encrypted/openai_api_key.txt"),
   OPEN_AI_SECRET_KEY_FILE_PATH("src/main/resources/encrypted/openai_secret_key.txt"),
   TOKENS_DIRECTORY_PATH("src/main/resources/token/"),
   TOKEN_FILE_NAME("/StoredCredential");

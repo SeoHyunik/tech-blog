@@ -63,9 +63,7 @@ class GoogleDriveServiceImplTest {
 
     // Assert - Check if the file list is not null and contains files
     assertNotNull(mdFileLists, "File list should not be null");
-    mdFileLists.mdFileLists().forEach(file -> {
-      System.out.println("File Name: " + file.fileName() + ", File Id: " + file.id() + ", Directory: " + file.directory()+ ", Created At: "+ file.createdAt()+ ", Modified At: "+ file.modifiedAt());
-    });
+    mdFileLists.mdFileLists().forEach(file -> System.out.println("File Name: " + file.fileName() + ", File Id: " + file.id() + ", Directory: " + file.directory()+ ", Created At: "+ file.createdAt()+ ", Modified At: "+ file.modifiedAt()));
 
     // Act - Upload scanned files to the database
     List<ProcessedDataList> result = googleService.uploadFiles(mdFileLists);
