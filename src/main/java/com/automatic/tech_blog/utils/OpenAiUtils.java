@@ -69,7 +69,7 @@ public class OpenAiUtils {
   private ApiRequest buildApiRequest(OpenAiRequest openAiRequest) {
     // Set HTTP headers
     HttpHeaders headers = new HttpHeaders();
-    headers.add("Authorization", openAiRequest.api_key());
+    headers.add("Authorization", "Bearer " + openAiRequest.api_key());
     headers.add("Content-Type", "application/json");
 
     // Create and return ApiRequest

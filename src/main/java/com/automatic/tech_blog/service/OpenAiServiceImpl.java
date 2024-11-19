@@ -11,7 +11,11 @@ import com.automatic.tech_blog.enums.SecuritySpecs;
 import com.automatic.tech_blog.utils.GoogleDriveUtils;
 import com.automatic.tech_blog.utils.OpenAiUtils;
 import com.automatic.tech_blog.utils.SecurityUtils;
+import com.google.api.client.json.Json;
 import com.google.api.services.drive.Drive;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -57,11 +61,12 @@ public class OpenAiServiceImpl implements OpenAiService {
   private ProcessedDataList transformMarkdownToHtml(String markdownContent, String fileName) {
     try {
       // 1. Load editor rules
-      String rules = loadEditorRules();
-      String prompt = rules + "\nMarkdown Content:\n" + markdownContent;
+      JsonObject roles = loadEditorRoles();
+      // Create the prompt with the updated messages
+      String prompt = createPrompt(roles, markdownContent);
 
       // 2. Get Open AI Api_key
-      String apiKey = SecurityUtils.decryptOpenAiApiKey(SecuritySpecs.OPEN_AI_API_KEY_FILE_PATH.getValue());
+      String apiKey = SecurityUtils.decryptOpenAiApiKey(SecuritySpecs.OPEN_AI_SECRET_KEY_FILE_PATH.getValue());
 
       // 2. Use OpenAI API to convert Markdown to HTML
       OpenAiRequest openAiRequest = new OpenAiRequest(prompt, apiKey);
@@ -80,13 +85,46 @@ public class OpenAiServiceImpl implements OpenAiService {
     }
   }
 
-  private String loadEditorRules() {
+  public String createPrompt(JsonObject roles, String markdownContent) {
     try {
+      // 1. Get the messages array from roles
+      JsonArray messages = roles.getAsJsonArray("messages");
+      if (messages == null) {
+        throw new IllegalStateException("Missing 'messages' array in roles JSON");
+      }
+
+      // 2. Create a new message for the markdown content
+      JsonObject newMessage = new JsonObject();
+      newMessage.addProperty("role", "user");
+      newMessage.addProperty("content", "Markdown Content:\n" + markdownContent);
+
+      // 3. Add the new message to the messages array
+      messages.add(newMessage);
+
+      // 4. Update the roles object with the modified messages array (optional if roles is mutable)
+      roles.add("messages", messages);
+
+      // 5. Return the updated roles object as a JSON string (or JsonObject if preferred)
+      return roles.toString(); // If you need JSON string
+      // return roles; // If you need JsonObject directly
+    } catch (Exception e) {
+      throw new IllegalStateException("Failed to create prompt JSON", e);
+    }
+  }
+
+  private JsonObject loadEditorRoles() {
+    try {
+      // 1. Load the JSON file from the given path
       Path path = Paths.get(InternalPaths.EDITOR_ROLES.getPath());
-      return Files.readString(path);
+      String jsonString = Files.readString(path);
+
+      return JsonParser.parseString(jsonString).getAsJsonObject();
     } catch (IOException e) {
       log.error("Failed to load editor rules from {}", InternalPaths.EDITOR_ROLES.getPath(), e);
       throw new IllegalStateException("Failed to load editor rules", e);
+    } catch (Exception e) {
+      log.error("Failed to parse editor rules JSON from {}", InternalPaths.EDITOR_ROLES.getPath(), e);
+      throw new IllegalStateException("Invalid JSON format in editor rules", e);
     }
   }
 

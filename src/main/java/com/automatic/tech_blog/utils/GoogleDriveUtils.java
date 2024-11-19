@@ -118,22 +118,12 @@ public class GoogleDriveUtils {
         credentials.refreshIfExpired(); // Refresh the token if expired
       }
 
-      String accessToken = credentials.getAccessToken().getTokenValue();
-
-      Permission permission = new Permission();
-      permission.setType("user");
-      permission.setRole("reader");
-      permission.setEmailAddress("hos0917@gmail.com");
-
-      driveService.permissions().create(fileId, permission).execute();
-
-
       // Inject AccessToken into request
       HttpRequestFactory requestFactory = driveService.getRequestFactory();
       HttpRequest request =
           requestFactory.buildGetRequest(
               new GenericUrl("https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media"));
-      request.getHeaders().setAuthorization("Bearer " + accessToken);
+      request.getHeaders().setAuthorization("Bearer " + credentials.getAccessToken().getTokenValue());
 
       ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
       request.execute().download(outputStream);

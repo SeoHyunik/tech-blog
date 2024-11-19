@@ -114,7 +114,7 @@ public class JsonEncryptorDecryptor {
     if (!directory.exists()) {
       directory.mkdirs();
     }
-    File file = new File(directory, "openai_api_key.txt");
+    File file = new File(directory, "openai_secret_key.txt");
     try (FileOutputStream fos = new FileOutputStream(file)) {
       fos.write(encryptedJson.getBytes());
     }
