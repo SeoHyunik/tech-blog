@@ -17,22 +17,40 @@ public class ExternalApiUtils {
 
   public ResponseEntity<String> callAPI(ApiRequest request) {
     try {
-      log.info("Request: method={}, url={}, headers={}, body={}",
-          request.method(), request.url(), request.headers(), request.body());
+      // Logging request details
+      log.info(
+          "Request: method={}, url={}, headers={}, body={}",
+          request.method(),
+          request.url(),
+          request.headers(),
+          request.body());
+
+      // Validate HTTP method
+      if (request.method() == null) {
+        throw new IllegalArgumentException("HTTP method cannot be null.");
+      }
 
       // WebClient call
-      Mono<ResponseEntity<String>> responseMono = webClient.method(request.method())
-          .uri(request.url())
-          .headers(headers -> headers.addAll(request.headers()))
-          .bodyValue(request.body())
-          .retrieve()
-          .toEntity(String.class);
+      Mono<ResponseEntity<String>> responseMono =
+          webClient
+              .method(request.method())
+              .uri(request.url())
+              .headers(
+                  headers -> {
+                    if (request.headers() != null) {
+                      headers.addAll(request.headers());
+                    }
+                  })
+              .bodyValue(request.body() != null ? request.body() : "")
+              .retrieve()
+              .toEntity(String.class);
 
       // Synchronous block for response
       return responseMono.block();
 
     } catch (WebClientResponseException e) {
-      log.error("HTTP error: status={}, responseBody={}", e.getStatusCode(), e.getResponseBodyAsString());
+      log.error(
+          "HTTP error: status={}, responseBody={}", e.getStatusCode(), e.getResponseBodyAsString());
       return ResponseEntity.status(e.getStatusCode())
           .headers(e.getHeaders())
           .body(e.getResponseBodyAsString());

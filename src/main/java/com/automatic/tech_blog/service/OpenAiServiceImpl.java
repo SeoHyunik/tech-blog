@@ -34,7 +34,7 @@ public class OpenAiServiceImpl implements OpenAiService {
   public List<ProcessedDataList> editTechNotes(MdFileLists mdFileLists, GoogleAuthInfo googleAuthInfo) {
     try {
       // 1. Create the Drive service
-      Drive driveService = googleDriveUtils.createDriveService(googleAuthInfo, "Tech Blog");
+      Drive driveService = googleDriveUtils.createDriveService(googleAuthInfo, "kiwijam");
 
       // 2. Process each Markdown file in the list
       List<ProcessedDataList> processedData = new ArrayList<>();

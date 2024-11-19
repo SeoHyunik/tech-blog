@@ -6,12 +6,16 @@ import com.automatic.tech_blog.dto.request.OpenAiRequest;
 import com.automatic.tech_blog.dto.service.MdFileInfo;
 import com.automatic.tech_blog.enums.ExternalUrls;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpRequest;
+import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
+import com.google.api.services.drive.model.Permission;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.gson.Gson;
@@ -108,19 +112,39 @@ public class GoogleDriveUtils {
     try {
       // Get GoogleCredentials
       GoogleCredentials credentials = authUtils.getGoogleCredentials(googleAuthInfo);
+
+      // Ensure AccessToken is valid
+      if (credentials.getAccessToken() == null || credentials.getAccessToken().getTokenValue() == null) {
+        credentials.refreshIfExpired(); // Refresh the token if expired
+      }
+
       String accessToken = credentials.getAccessToken().getTokenValue();
-      // Add permission to read the file content
-      addPermissionToFile(fileId, accessToken);
+
+      Permission permission = new Permission();
+      permission.setType("user");
+      permission.setRole("reader");
+      permission.setEmailAddress("hos0917@gmail.com");
+
+      driveService.permissions().create(fileId, permission).execute();
+
+
+      // Inject AccessToken into request
+      HttpRequestFactory requestFactory = driveService.getRequestFactory();
+      HttpRequest request =
+          requestFactory.buildGetRequest(
+              new GenericUrl("https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media"));
+      request.getHeaders().setAuthorization("Bearer " + accessToken);
 
       ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-      // Execute file content retrieval
-      driveService.files().get(fileId).executeMediaAndDownloadTo(outputStream);
+      request.execute().download(outputStream);
+
       return outputStream.toString(StandardCharsets.UTF_8);
     } catch (IOException e) {
       log.error("Error retrieving content for file ID: {}", fileId, e);
       return null;
     }
   }
+
 
   private void addPermissionToFile(String fileId, String accessToken) throws IOException {
     try {

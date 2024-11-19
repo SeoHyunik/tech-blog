@@ -35,7 +35,7 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
   public MdFileLists scanFiles(GoogleAuthInfo authInfo) {
     try {
       // Step 1: Create the Drive service
-      Drive driveService = driveUtils.createDriveService(authInfo, "Tech Blog");
+      Drive driveService = driveUtils.createDriveService(authInfo, "kiwijam");
 
       // Step 2: Scan for .md files in specific directories
       List<String> targetFolders = TargetFolders.getFolderNames();

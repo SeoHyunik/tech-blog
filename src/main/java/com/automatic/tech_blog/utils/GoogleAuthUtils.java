@@ -23,6 +23,8 @@ import com.google.api.services.drive.DriveScopes;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.UserCredentials;
+import java.util.Arrays;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -42,7 +44,7 @@ public class GoogleAuthUtils {
       // 1. Decrypt credentials to obtain OAuthCredentials
       OAuthCredentials oauthCredentials = SecurityUtils.decryptCredentials(SecuritySpecs.CREDENTIAL_FILE_PATH.getValue());
 
-      // 2. Compare client ID from authInfo and decrypted OAuthCredentials
+      // 2. Validate client ID
       if (!oauthCredentials.web().client_id().equals(authInfo.clientId())) {
         throw new IllegalArgumentException("Provided client ID does not match the credentials.");
       }
@@ -57,52 +59,68 @@ public class GoogleAuthUtils {
           .setRedirectUris(oauthCredentials.web().redirect_uris());
       clientSecrets.setInstalled(details);
 
-      // 4. Set up authorization flow
+      // 4. Define the required scopes
+      List<String> scopes = Arrays.asList(
+          DriveScopes.DRIVE,          // Full access to Drive
+          DriveScopes.DRIVE_FILE      // Access to files created by the app
+      );
+
+      // 5. Set up authorization flow
       GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
           GoogleNetHttpTransport.newTrustedTransport(),
           GsonFactory.getDefaultInstance(),
           clientSecrets,
-          Collections.singletonList(DriveScopes.DRIVE_METADATA_READONLY))
+          scopes)
           .setDataStoreFactory(new FileDataStoreFactory(new File(SecuritySpecs.TOKENS_DIRECTORY_PATH.getValue())))
-          .setAccessType("offline")
-          .setApprovalPrompt("force")
+          .setAccessType("offline") // To ensure a refresh token is provided
+          .setApprovalPrompt("auto")
           .build();
 
-
-      // 5. Check for existing credential
+      // 6. Load or refresh existing credentials
       Credential credential = flow.loadCredential("user");
       if (credential == null || credential.getRefreshToken() == null) {
-        // If no existing credential or refresh token, delete StoredCredential and proceed with authorization
+        // Clear any existing stored credentials
         File storedCredentialFile = new File(SecuritySpecs.TOKENS_DIRECTORY_PATH.getValue() + SecuritySpecs.TOKEN_FILE_NAME.getValue());
-        if (storedCredentialFile.exists()) {
-          storedCredentialFile.delete();
-          log.info("StoredCredential file deleted");
+        if (storedCredentialFile.exists() && storedCredentialFile.delete()) {
+          log.info("StoredCredential file deleted successfully.");
         }
 
-        // Proceed with new authorization
+        // Request new authorization
         LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
         credential = new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
 
-        // Validate that we received a refresh token
+        // Validate refresh token
         if (credential.getRefreshToken() == null) {
-          throw new IllegalStateException("Refresh token is null. Please ensure offline access is enabled.");
+          throw new IllegalStateException("Refresh token is null. Ensure offline access is enabled.");
         }
       } else {
-        log.info("Existing credential with refresh token found");
+        log.info("Existing credential with refresh token found.");
       }
 
-      // 6. Convert Credential to GoogleCredentials (supporting automatic refresh)
+      // 7. Ensure Access Token is valid
+      if (credential.getAccessToken() == null || credential.getExpirationTimeMilliseconds() == null ||
+          credential.getExpirationTimeMilliseconds() <= System.currentTimeMillis()) {
+        log.info("Access token expired or invalid. Refreshing...");
+        credential.refreshToken();
+      }
+
+      log.info("Access token: {}", credential.getAccessToken());
+
+      // 8. Convert Credential to GoogleCredentials
       return UserCredentials.newBuilder()
           .setClientId(oauthCredentials.web().client_id())
           .setClientSecret(oauthCredentials.web().client_secret())
           .setRefreshToken(credential.getRefreshToken())
-          .setAccessToken(new AccessToken(credential.getAccessToken(), new Date(credential.getExpirationTimeMilliseconds())))
+          .setAccessToken(new AccessToken(
+              credential.getAccessToken(),
+              new Date(credential.getExpirationTimeMilliseconds())))
           .build();
     } catch (Exception e) {
-      log.error("Error creating Google Credentials: {}", e.getMessage());
+      log.error("Error creating Google Credentials: {}", e.getMessage(), e);
       throw new IllegalStateException("Failed to create Google Credentials", e);
     }
   }
+
 
   public AccessToken refreshAccessToken(GoogleCredentials credentials, GoogleAuthInfo authInfo) throws Exception {
 
