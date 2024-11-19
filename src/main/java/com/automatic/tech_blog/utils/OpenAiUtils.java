@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class OpenAiUtils {
 
-  private final ExternalApiUtils apiUtils; // Utility class for API calls
+  private final ExternalApiUtils apiUtils;
 
   public OpenAiResponse generateHtmlFromMarkdown(OpenAiRequest openAiRequest) {
     try {
@@ -31,19 +31,19 @@ public class OpenAiUtils {
       ResponseEntity<String> response = apiUtils.callAPI(apiRequest);
 
       // 3. Validate response
-      if (response.getBody() == null) {
+      if (response.getBody() == null)
         throw new IllegalStateException("API response body is null.");
-      }
 
       // 4. Parse the response body
       JsonObject jsonObject = JsonParser.parseString(response.getBody()).getAsJsonObject();
 
       // 5. Extract relevant fields
       String id = jsonObject.has("id") ? jsonObject.get("id").getAsString() : null;
+
       JsonArray choices = jsonObject.getAsJsonArray("choices");
-      if (choices == null || choices.size() == 0) {
+      if (choices == null || choices.size() == 0)
         throw new IllegalStateException("API response does not contain choices.");
-      }
+
       String content = choices
           .get(0)
           .getAsJsonObject()
@@ -54,9 +54,7 @@ public class OpenAiUtils {
           ? jsonObject.getAsJsonObject("usage").get("total_tokens").getAsInt()
           : 0;
 
-      // Return the parsed response as OpenAiResponse
       return new OpenAiResponse(content, tokenUsage);
-
     } catch (JsonParseException e) {
       log.error("Error parsing JSON response: {}", e.getMessage(), e);
       throw new IllegalStateException("Failed to parse API response JSON", e);
@@ -67,12 +65,12 @@ public class OpenAiUtils {
   }
 
   private ApiRequest buildApiRequest(OpenAiRequest openAiRequest) {
-    // Set HTTP headers
+    // 1. Set HTTP headers
     HttpHeaders headers = new HttpHeaders();
     headers.add("Authorization", "Bearer " + openAiRequest.api_key());
     headers.add("Content-Type", "application/json");
 
-    // Create and return ApiRequest
+    // 2. Create and return ApiRequest
     return new ApiRequest(
         HttpMethod.POST,
         headers,

@@ -111,7 +111,6 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
       }
     });
 
-    // 7. Return processed data list
     return processedData;
   }
 

@@ -54,15 +54,14 @@ public class ExternalApiUtils {
   }
 
   private void validateRequest(ApiRequest request) {
-    if (request == null) {
+    if (request == null)
       throw new IllegalArgumentException("ApiRequest cannot be null.");
-    }
-    if (request.method() == null) {
+
+    if (request.method() == null)
       throw new IllegalArgumentException("HTTP method cannot be null.");
-    }
-    if (request.url() == null || request.url().isBlank()) {
+
+    if (request.url() == null || request.url().isBlank())
       throw new IllegalArgumentException("URL cannot be null or empty.");
-    }
   }
 
   private void logRequest(ApiRequest request) {

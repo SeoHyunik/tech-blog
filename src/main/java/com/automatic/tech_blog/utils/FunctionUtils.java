@@ -16,11 +16,12 @@ public class FunctionUtils {
 
   public static Date convertGoogleDateTimeToDate(DateTime googleDateTime) {
     try {
+      // 1. Throw exception if input is null
       if (googleDateTime == null) {
         log.error("Input DateTime is null");
         throw new IllegalArgumentException("Input DateTime is null");
       }
-      // Google DateTime -> long milliseconds -> formatted Date String -> Date
+      // 2. Google DateTime -> long milliseconds -> formatted Date String -> Date
       String formattedDate = DATE_FORMAT.format(new Date(googleDateTime.getValue()));
       return DATE_FORMAT.parse(formattedDate);  // Return as java.util.Date
     } catch (ParseException e) {

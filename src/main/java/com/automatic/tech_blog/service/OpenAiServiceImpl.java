@@ -88,7 +88,7 @@ public class OpenAiServiceImpl implements OpenAiService {
 
   private ProcessedDataList transformMarkdownToHtml(String markdownContent, String fileName) {
     try {
-      // 1. Load editor rules
+      // 1. Load editor roles
       JsonObject roles = loadEditorRoles();
 
       // 2. Create the prompt with the updated messages
@@ -103,8 +103,8 @@ public class OpenAiServiceImpl implements OpenAiService {
 
       // 5. Save the HTML to a local directory
       saveHtmlToLocal(openAiResponse.content(), fileName);
-
       log.info("Token Usage: {}", openAiResponse.tokenUsage());
+      // token 저장로직 추가
 
       // 6. Return the processed data
       return new ProcessedDataList(fileName, openAiResponse.content());
@@ -118,9 +118,8 @@ public class OpenAiServiceImpl implements OpenAiService {
     try {
       // 1. Get the messages array from roles
       JsonArray messages = roles.getAsJsonArray("messages");
-      if (messages == null) {
+      if (messages == null)
         throw new IllegalStateException("Missing 'messages' array in roles JSON");
-      }
 
       // 2. Create a new message for the markdown content
       JsonObject newMessage = new JsonObject();
@@ -133,9 +132,7 @@ public class OpenAiServiceImpl implements OpenAiService {
       // 4. Update the roles object with the modified messages array (optional if roles is mutable)
       roles.add("messages", messages);
 
-      // 5. Return the updated roles object as a JSON string (or JsonObject if preferred)
-      return roles.toString(); // If you need JSON string
-      // return roles; // If you need JsonObject directly
+      return roles.toString();
     } catch (Exception e) {
       throw new IllegalStateException("Failed to create prompt JSON", e);
     }
@@ -147,13 +144,14 @@ public class OpenAiServiceImpl implements OpenAiService {
       Path path = Paths.get(InternalPaths.EDITOR_ROLES.getPath());
       String jsonString = Files.readString(path);
 
+      // 2. Parse the JSON string to a JsonObject
       return JsonParser.parseString(jsonString).getAsJsonObject();
     } catch (IOException e) {
-      log.error("Failed to load editor rules from {}", InternalPaths.EDITOR_ROLES.getPath(), e);
-      throw new IllegalStateException("Failed to load editor rules", e);
+      log.error("Failed to load editor roles from {}", InternalPaths.EDITOR_ROLES.getPath(), e);
+      throw new IllegalStateException("Failed to load editor roles", e);
     } catch (Exception e) {
-      log.error("Failed to parse editor rules JSON from {}", InternalPaths.EDITOR_ROLES.getPath(), e);
-      throw new IllegalStateException("Invalid JSON format in editor rules", e);
+      log.error("Failed to parse editor roles JSON from {}", InternalPaths.EDITOR_ROLES.getPath(), e);
+      throw new IllegalStateException("Invalid JSON format in editor roles", e);
     }
   }
 
@@ -161,9 +159,8 @@ public class OpenAiServiceImpl implements OpenAiService {
     try {
       // 1. Ensure the directory exists
       Path outputDir = Paths.get(InternalPaths.HTML_SAVE_DIR.getPath());
-      if (!Files.exists(outputDir)) {
+      if (!Files.exists(outputDir))
         Files.createDirectories(outputDir);
-      }
 
       // 2. Generate the full file path
       String sanitizedFileName = fileName.replace(".md", ".html");

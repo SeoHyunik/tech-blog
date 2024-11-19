@@ -5,7 +5,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.nio.file.Files;
 import java.security.SecureRandom;
 import java.util.Base64;
 import io.github.cdimascio.dotenv.Dotenv;

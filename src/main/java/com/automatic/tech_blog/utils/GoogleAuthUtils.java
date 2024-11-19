@@ -45,9 +45,8 @@ public class GoogleAuthUtils {
       OAuthCredentials oauthCredentials = SecurityUtils.decryptCredentials(SecuritySpecs.CREDENTIAL_FILE_PATH.getValue());
 
       // 2. Validate client ID
-      if (!oauthCredentials.web().client_id().equals(authInfo.clientId())) {
+      if (!oauthCredentials.web().client_id().equals(authInfo.clientId()))
         throw new IllegalArgumentException("Provided client ID does not match the credentials.");
-      }
 
       // 3. Set up GoogleClientSecrets with decrypted data
       GoogleClientSecrets clientSecrets = new GoogleClientSecrets();
@@ -79,20 +78,18 @@ public class GoogleAuthUtils {
       // 6. Load or refresh existing credentials
       Credential credential = flow.loadCredential("user");
       if (credential == null || credential.getRefreshToken() == null) {
-        // Clear any existing stored credentials
+        // 6-1. Clear any existing stored credentials
         File storedCredentialFile = new File(SecuritySpecs.TOKENS_DIRECTORY_PATH.getValue() + SecuritySpecs.TOKEN_FILE_NAME.getValue());
-        if (storedCredentialFile.exists() && storedCredentialFile.delete()) {
+        if (storedCredentialFile.exists() && storedCredentialFile.delete())
           log.info("StoredCredential file deleted successfully.");
-        }
 
-        // Request new authorization
+        // 6-2. Request new authorization
         LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
         credential = new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
 
-        // Validate refresh token
-        if (credential.getRefreshToken() == null) {
+        // 6-3. Validate refresh token
+        if (credential.getRefreshToken() == null)
           throw new IllegalStateException("Refresh token is null. Ensure offline access is enabled.");
-        }
       } else {
         log.info("Existing credential with refresh token found.");
       }
@@ -123,18 +120,15 @@ public class GoogleAuthUtils {
 
 
   public AccessToken refreshAccessToken(GoogleCredentials credentials, GoogleAuthInfo authInfo) throws Exception {
-
     // 1. Check if credentials are an instance of UserCredentials
-    String refreshToken;
-    if (!(credentials instanceof UserCredentials)) {
+    if (!(credentials instanceof UserCredentials))
       credentials = getGoogleCredentials(new GoogleAuthInfo(authInfo.clientId()));
-    }
-    refreshToken = ((UserCredentials) credentials).getRefreshToken();
+
+    String refreshToken = ((UserCredentials) credentials).getRefreshToken();
 
     // 2. Validate that a refresh token is available
-    if (refreshToken == null) {
+    if (refreshToken == null)
       throw new IllegalStateException("Refresh token is missing. Ensure offline access is enabled and credentials are refreshed.");
-    }
 
     // 3. Decrypt OAuth credentials to obtain OAuth client details
     OAuthCredentials oauthCredentials = SecurityUtils.decryptCredentials(SecuritySpecs.CREDENTIAL_FILE_PATH.getValue());
@@ -168,7 +162,7 @@ public class GoogleAuthUtils {
       ObjectMapper objectMapper = new ObjectMapper();
       JsonNode jsonResponse = objectMapper.readTree(response.getContent());
 
-      // Extract access token from JSON response
+      // 8. Extract access token from JSON response
       String newAccessToken = jsonResponse.get("access_token").asText();
       return new AccessToken(newAccessToken, null);
     } else {
