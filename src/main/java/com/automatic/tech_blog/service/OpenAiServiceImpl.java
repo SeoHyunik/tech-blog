@@ -48,6 +48,7 @@ public class OpenAiServiceImpl implements OpenAiService {
         Files.createDirectories(outputDir);
       }
 
+      // 3. Put the existing HTML files in a set for quick lookup
       Set<String> existingHtmlFiles;
       try (Stream<Path> stream = Files.list(outputDir)) {
         existingHtmlFiles = stream.filter(path -> path.toString().endsWith(".html"))
@@ -55,21 +56,22 @@ public class OpenAiServiceImpl implements OpenAiService {
             .collect(Collectors.toSet());
       }
 
-      // 3. Process each Markdown file in the list
+      // 4. Process each Markdown file in the list
       List<ProcessedDataList> processedData = new ArrayList<>();
       for (MdFileInfo mdFileInfo : mdFileLists.mdFileLists()) {
         String htmlFileName = mdFileInfo.fileName().replace(".md", ".html");
 
-        // Skip processing if the HTML file already exists locally
+        // 5. Skip processing if the HTML file already exists locally
         if (existingHtmlFiles.contains(htmlFileName)) {
           log.info("HTML file already exists. Skipping processing for: {}", htmlFileName);
           continue;
         }
 
-        // Fetch file content from Google Drive
+        // 6. Fetch file content from Google Drive
         String fileContent = googleDriveUtils.getFileContent(driveService, mdFileInfo.id(), googleAuthInfo);
 
         if (fileContent != null) {
+          // 7. Transform Markdown to HTML
           processedData.add(transformMarkdownToHtml(fileContent, mdFileInfo.fileName()));
         } else {
           log.warn("File content is null for file ID: {}", mdFileInfo.id());
@@ -88,22 +90,23 @@ public class OpenAiServiceImpl implements OpenAiService {
     try {
       // 1. Load editor rules
       JsonObject roles = loadEditorRoles();
-      // Create the prompt with the updated messages
+
+      // 2. Create the prompt with the updated messages
       String prompt = createPrompt(roles, markdownContent);
 
-      // 2. Get Open AI Api_key
+      // 3. Get Open AI Api_key
       String apiKey = SecurityUtils.decryptOpenAiApiKey(SecuritySpecs.OPEN_AI_SECRET_KEY_FILE_PATH.getValue());
 
-      // 2. Use OpenAI API to convert Markdown to HTML
+      // 4. Use OpenAI API to convert Markdown to HTML
       OpenAiRequest openAiRequest = new OpenAiRequest(prompt, apiKey);
       OpenAiResponse openAiResponse = openAiUtils.generateHtmlFromMarkdown(openAiRequest);
 
-      // 3. Save the HTML to a local directory
+      // 5. Save the HTML to a local directory
       saveHtmlToLocal(openAiResponse.content(), fileName);
 
       log.info("Token Usage: {}", openAiResponse.tokenUsage());
 
-      // 4. Return the processed data
+      // 6. Return the processed data
       return new ProcessedDataList(fileName, openAiResponse.content());
     } catch (Exception e) {
       log.error("Error converting Markdown to HTML: {}", e.getMessage(), e);

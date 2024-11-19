@@ -17,20 +17,15 @@ import java.util.Objects;
 public class ExternalApiUtils {
   private final WebClient.Builder webClientBuilder;
 
-  /**
-   * Sends an API request using WebClient and handles the response.
-   *
-   * @param request The API request details.
-   * @return The response as a ResponseEntity<String>.
-   */
   public ResponseEntity<String> callAPI(ApiRequest request) {
-    validateRequest(request);
-
     try {
-      // Log request details
+      // 1. Validate the API request
+      validateRequest(request);
+
+      // 2. Log request details
       logRequest(request);
 
-      // Execute WebClient call
+      // 3. Execute WebClient call
       return webClientBuilder.build()
           .method(request.method())
           .uri(request.url())
@@ -58,11 +53,6 @@ public class ExternalApiUtils {
     }
   }
 
-  /**
-   * Validates the API request.
-   *
-   * @param request The API request to validate.
-   */
   private void validateRequest(ApiRequest request) {
     if (request == null) {
       throw new IllegalArgumentException("ApiRequest cannot be null.");
@@ -75,11 +65,6 @@ public class ExternalApiUtils {
     }
   }
 
-  /**
-   * Logs the API request details.
-   *
-   * @param request The API request to log.
-   */
   private void logRequest(ApiRequest request) {
     log.info(
         "API Request: method={}, url={}, headers={}, body={}",
@@ -90,11 +75,6 @@ public class ExternalApiUtils {
     );
   }
 
-  /**
-   * Logs the error details for WebClientResponseException.
-   *
-   * @param e The WebClientResponseException instance.
-   */
   private void logErrorResponse(WebClientResponseException e) {
     log.error(
         "HTTP error during API call: status={}, responseBody={}, headers={}",

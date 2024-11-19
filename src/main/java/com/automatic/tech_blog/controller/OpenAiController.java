@@ -28,11 +28,11 @@ public class OpenAiController {
   @PostMapping("/edit-tech-notes")
   @ResponseStatus(HttpStatus.CREATED)
   public ApiResponse editTechNotes(@RequestBody @Valid EditTechNotesRequest request) {
-    // Extract GoogleAuthInfo and MdFileLists
+    // 1. Extract GoogleAuthInfo and MdFileLists
     GoogleAuthInfo googleAuthInfo = request.googleAuthInfo();
     MdFileLists mdFileLists = request.mdFileLists();
 
-    // Call the service with extracted data
+    // 2. Call the service with extracted data
     return new ApiResponse(
         HttpStatus.CREATED.value(),
         openAiService.editTechNotes(mdFileLists, googleAuthInfo),
