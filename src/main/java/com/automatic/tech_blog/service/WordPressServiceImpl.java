@@ -65,8 +65,8 @@ public class WordPressServiceImpl implements WordPressService{
             return Mono.empty();
           }
 
+          // 3. Parse response to extract id and slug (name)
           try {
-            // 3. Parse response to extract id and slug (name)
             JsonObject jsonResponse = JsonParser.parseString(response.getBody()).getAsJsonObject();
             String id = jsonResponse.get("id").getAsString();
             String name = jsonResponse.get("slug").getAsString();
@@ -92,11 +92,12 @@ public class WordPressServiceImpl implements WordPressService{
       // 2. Build WordPress API request with query string
       HttpHeaders headers = new HttpHeaders();
       headers.set("Content-Type", "application/json");
+
       ExternalApiRequest tokenRequest = new ExternalApiRequest(
           HttpMethod.POST,
           headers,
           urlWithQuery,
-          null // No body for GET requests
+          null
       );
 
       // 3. Call the API and parse the response to get jwt_token
@@ -130,7 +131,7 @@ public class WordPressServiceImpl implements WordPressService{
         HttpMethod.GET,
         headers,
         ExternalUrls.WORD_PRESS_KIWIJAM_V1.getUrl() + "/token-validate",
-        null // No body for GET request
+        null
     );
 
     // 2. Call the API and validate the response
@@ -138,11 +139,11 @@ public class WordPressServiceImpl implements WordPressService{
     if(validateResponse == null || validateResponse.getBody() == null)
       throw new IllegalStateException("Token validation response is null");
 
+    // 3. Parse the response and check status and message
     JsonObject validateJson = JsonParser.parseString(validateResponse.getBody()).getAsJsonObject();
     if (!"TRUE".equals(validateJson.get("status").getAsString()) ||
-        !"VALID_TOKEN".equals(validateJson.get("message").getAsString())) {
+        !"VALID_TOKEN".equals(validateJson.get("message").getAsString()))
       throw new IllegalStateException("Invalid WordPress token");
-    }
 
     log.info("WordPress token validated successfully");
   }
@@ -171,7 +172,7 @@ public class WordPressServiceImpl implements WordPressService{
     return new ExternalApiRequest(
         HttpMethod.POST,
         headers,
-        ExternalUrls.OPEN_AI_COMPLETION_URI.getUrl(),
+        ExternalUrls.WORD_PRESS_KIWIJAM_V2.getUrl() + "/posts",
         body
     );
   }
