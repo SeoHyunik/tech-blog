@@ -13,7 +13,8 @@ public class TbPostsInfo {
   @Id
   private int id;
   private String title;
-  private String content;
+  private int content_id;
+  private String file_id;
   private Timestamp publishedAt;
   private String status;
 }

@@ -8,16 +8,14 @@ import com.automatic.tech_blog.dto.service.MdFileLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.enums.InternalPaths;
 import com.automatic.tech_blog.enums.SecuritySpecs;
+import com.automatic.tech_blog.utils.FileUtils;
 import com.automatic.tech_blog.utils.GoogleDriveUtils;
 import com.automatic.tech_blog.utils.OpenAiUtils;
 import com.automatic.tech_blog.utils.SecurityUtils;
-import com.google.api.services.drive.Drive;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,8 +24,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Service
 @Slf4j
@@ -37,82 +35,50 @@ public class OpenAiServiceImpl implements OpenAiService {
   private final OpenAiUtils openAiUtils;
 
   @Override
-  public List<ProcessedDataList> editTechNotes(MdFileLists mdFileLists, GoogleAuthInfo googleAuthInfo) {
-    try {
-      // 1. Create the Drive service
-      Drive driveService = googleDriveUtils.createDriveService(googleAuthInfo, "kiwijam");
+  public Flux<ProcessedDataList> editTechNotes(MdFileLists mdFileLists, GoogleAuthInfo googleAuthInfo) {
+    // 1. Scan the local directory for existing HTML files (Sync Job)
+    Set<String> existingHtmlFiles = FileUtils.getExistingHtmlFiles();
 
-      // 2. Scan the local directory for existing HTML files
-      Path outputDir = Paths.get(InternalPaths.HTML_SAVE_DIR.getPath());
-      if (!Files.exists(outputDir)) {
-        Files.createDirectories(outputDir);
-      }
-
-      // 3. Put the existing HTML files in a set for quick lookup
-      Set<String> existingHtmlFiles;
-      try (Stream<Path> stream = Files.list(outputDir)) {
-        existingHtmlFiles = stream.filter(path -> path.toString().endsWith(".html"))
-            .map(path -> path.getFileName().toString())
-            .collect(Collectors.toSet());
-      }
-
-      // 4. Process each Markdown file in the list
-      List<ProcessedDataList> processedData = new ArrayList<>();
-      for (MdFileInfo mdFileInfo : mdFileLists.mdFileLists()) {
-        String htmlFileName = mdFileInfo.fileName().replace(".md", ".html");
-
-        // 5. Skip processing if the HTML file already exists locally
-        if (existingHtmlFiles.contains(htmlFileName)) {
-          log.info("HTML file already exists. Skipping processing for: {}", htmlFileName);
-          continue;
-        }
-
-        // 6. Fetch file content from Google Drive
-        String fileContent = googleDriveUtils.getFileContent(driveService, mdFileInfo.id(), googleAuthInfo);
-
-        if (fileContent != null) {
-          // 7. Transform Markdown to HTML
-          processedData.add(transformMarkdownToHtml(fileContent, mdFileInfo.fileName()));
-        } else {
-          log.warn("File content is null for file ID: {}", mdFileInfo.id());
-        }
-      }
-      return processedData;
-    } catch (Exception e) {
-      log.error("Error while editing tech notes: {}", e.getMessage(), e);
-      throw new IllegalStateException("Failed to edit tech notes", e);
-    }
+    // 2. Filter and process markdown files (Async Job)
+    return Flux.fromIterable(mdFileLists.mdFileLists())
+        .filter(mdFileInfo -> !existingHtmlFiles.contains(mdFileInfo.fileName().replace(".md", ".html")))
+        .flatMap(mdFileInfo -> processMarkdownFileAsync(mdFileInfo, googleAuthInfo));
   }
 
 
 
-  private ProcessedDataList transformMarkdownToHtml(String markdownContent, String fileName) {
-    try {
-      // 1. Load editor roles
+  private Mono<ProcessedDataList> processMarkdownFileAsync(MdFileInfo mdFileInfo, GoogleAuthInfo googleAuthInfo) {
+    return Mono.fromCallable(() -> googleDriveUtils.createDriveService(googleAuthInfo, "kiwijam"))
+        .flatMap(driveService -> Mono.fromCallable(() ->
+            googleDriveUtils.getFileContent(driveService, mdFileInfo.id(), googleAuthInfo)))
+        .flatMap(fileContent -> fileContent != null
+            ? transformMarkdownToHtml(fileContent, mdFileInfo.fileName())
+            : Mono.fromRunnable(() -> log.info("File content is null for file ID: {}", mdFileInfo.id()))
+        );
+  }
+
+  private Mono<ProcessedDataList> transformMarkdownToHtml(String markdownContent, String fileName) {
+    return Mono.fromCallable(() -> {
+      // 1. Load the editor roles JSON
       JsonObject roles = loadEditorRoles();
 
-      // 2. Create the prompt with the updated messages
+      // 2. Create the prompt JSON
       String prompt = createPrompt(roles, markdownContent);
 
-      // 3. Get Open AI Api_key
-      String apiKey = SecurityUtils.decryptOpenAiApiKey(SecuritySpecs.OPEN_AI_SECRET_KEY_FILE_PATH.getValue());
+      // 3. Get the OpenAI API key
+      String apiKey = SecurityUtils.decryptAuthFile(SecuritySpecs.OPEN_AI_SECRET_KEY_FILE_PATH.getValue());
 
-      // 4. Use OpenAI API to convert Markdown to HTML
+      // 4. Generate HTML content from the markdown
       OpenAiRequest openAiRequest = new OpenAiRequest(prompt, apiKey);
       OpenAiResponse openAiResponse = openAiUtils.generateHtmlFromMarkdown(openAiRequest);
 
-      // 5. Save the HTML to a local directory
+      // 5. Save the HTML content to a local file
       saveHtmlToLocal(openAiResponse.content(), fileName);
-      log.info("Token Usage: {}", openAiResponse.tokenUsage());
-      // token 저장로직 추가
 
-      // 6. Return the processed data
       return new ProcessedDataList(fileName, openAiResponse.content());
-    } catch (Exception e) {
-      log.error("Error converting Markdown to HTML: {}", e.getMessage(), e);
-      throw new IllegalStateException("Failed to transform Markdown to HTML", e);
-    }
+    });
   }
+
 
   public String createPrompt(JsonObject roles, String markdownContent) {
     try {

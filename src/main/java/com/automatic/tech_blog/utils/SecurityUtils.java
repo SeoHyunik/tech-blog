@@ -31,7 +31,7 @@ public class SecurityUtils {
     return objectMapper.readValue(decryptedJson, OAuthCredentials.class);
   }
 
-  public static String decryptOpenAiApiKey(String encryptedFilePath) throws Exception {
+  public static String decryptAuthFile(String encryptedFilePath) throws Exception {
     // 1. Load and decode the secret key from the environment
     SecretKey secretKey = loadSecretKeyFromEnv();
 

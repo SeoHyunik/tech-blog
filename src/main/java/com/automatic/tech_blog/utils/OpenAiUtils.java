@@ -77,6 +77,4 @@ public class OpenAiUtils {
         ExternalUrls.OPEN_AI_COMPLETION_URI.getUrl(),
         openAiRequest.prompt());
   }
-
-
 }

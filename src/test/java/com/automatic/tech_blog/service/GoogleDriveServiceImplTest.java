@@ -18,6 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
@@ -90,9 +91,21 @@ class GoogleDriveServiceImplTest {
     // Optional: Additional checks for file properties or specific conditions
     assert (!newFiles.mdFileLists().isEmpty()) : "New files list should not be empty";
 
-    List<ProcessedDataList> processedDataLists = openAiService.editTechNotes(newFiles, authInfo);
+    // Act - Process the files using the OpenAiService
+    List<ProcessedDataList> processedDataLists = openAiService.editTechNotes(newFiles, authInfo)
+        .collectList() // Convert Flux<ProcessedDataList> to Mono<List<ProcessedDataList>>
+        .block();      // Block to wait for the result synchronously
 
-    System.out.println("Processed Data Lists: " + processedDataLists);
+    // Assert - Verify the processed data list
+    assertNotNull(processedDataLists, "Processed data list should not be null");
+    assert (!processedDataLists.isEmpty()) : "Processed data list should not be empty";
+
+    // Print the processed data for debugging
+    processedDataLists.forEach(data -> {
+      System.out.println("Processed File Name: " + data.name() +
+          ", ID: " + data.id());
+    });
   }
+
 
 }

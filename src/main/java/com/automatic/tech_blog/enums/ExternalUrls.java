@@ -5,7 +5,9 @@ public enum ExternalUrls {
   GOOGLE_TOKEN_URI("https://oauth2.googleapis.com/token"),
   GOOGLE_USER_INFO_URI("https://www.googleapis.com/oauth2/v3/userinfo"),
   GOOGLE_DRIVE_READONLY("https://www.googleapis.com/auth/drive"),
-  OPEN_AI_COMPLETION_URI("https://api.openai.com/v1/chat/completions");
+  OPEN_AI_COMPLETION_URI("https://api.openai.com/v1/chat/completions"),
+  WORD_PRESS_KIWIJAM_V1("https://kiwijam.kr/wp-json/api/v1"),
+  WORD_PRESS_KIWIJAM_V2("https://kiwijam.kr/wp-json/wp/v2");
 
   private final String url;
 

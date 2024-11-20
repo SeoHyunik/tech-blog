@@ -7,6 +7,7 @@ public enum SecuritySpecs {
   ENV_KEY_NAME("SECRET_KEY_BASE64"),
   CREDENTIAL_FILE_PATH("src/main/resources/encrypted/encrypted_credentials.txt"),
   OPEN_AI_SECRET_KEY_FILE_PATH("src/main/resources/encrypted/openai_secret_key.txt"),
+  KIWIJAM_PW_FILE_PATH("src/main/resources/encrypted/kiwijam_pw.txt"),
   TOKENS_DIRECTORY_PATH("src/main/resources/token/"),
   TOKEN_FILE_NAME("/StoredCredential");
 
