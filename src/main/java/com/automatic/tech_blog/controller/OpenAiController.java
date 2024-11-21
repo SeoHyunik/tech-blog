@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,22 +24,21 @@ import org.springframework.web.bind.annotation.RestController;
 public class OpenAiController {
   private final OpenAiService openAiService;
 
-  /* TODO: Transform the contents of Markdown files into a blog-friendly format
-      and convert them to HTML (markup) for WordPress upload */
   @PostMapping("/edit-tech-notes")
   @ResponseStatus(HttpStatus.CREATED)
-  public ApiResponse editTechNotes(@RequestBody @Valid EditTechNotesRequest request) {
+  public Mono<ApiResponse> editTechNotes(@RequestBody @Valid EditTechNotesRequest request) {
     // 1. Extract GoogleAuthInfo and MdFileLists
     GoogleAuthInfo googleAuthInfo = request.googleAuthInfo();
     MdFileLists mdFileLists = request.mdFileLists();
 
-    // 2. Call the service with extracted data
-    return new ApiResponse(
-        HttpStatus.CREATED.value(),
-        openAiService.editTechNotes(mdFileLists, googleAuthInfo),
-        new Date(),
-        true
-    );
+    // 2. Call the service and wrap the response in a Mono
+    return openAiService.editTechNotes(request)
+        .collectList()
+        .map(result -> new ApiResponse(
+            HttpStatus.CREATED.value(),
+            result,
+            new Date(),
+            true
+        ));
   }
-
 }

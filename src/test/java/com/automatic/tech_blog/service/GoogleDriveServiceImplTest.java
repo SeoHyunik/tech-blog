@@ -1,5 +1,6 @@
 package com.automatic.tech_blog.service;
 
+import com.automatic.tech_blog.dto.request.EditTechNotesRequest;
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
 import com.automatic.tech_blog.dto.service.MdFileLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
@@ -91,8 +92,9 @@ class GoogleDriveServiceImplTest {
     // Optional: Additional checks for file properties or specific conditions
     assert (!newFiles.mdFileLists().isEmpty()) : "New files list should not be empty";
 
+    EditTechNotesRequest editTechNotesRequest = new EditTechNotesRequest(authInfo, newFiles);
     // Act - Process the files using the OpenAiService
-    List<ProcessedDataList> processedDataLists = openAiService.editTechNotes(newFiles, authInfo)
+    List<ProcessedDataList> processedDataLists = openAiService.editTechNotes(editTechNotesRequest)
         .collectList() // Convert Flux<ProcessedDataList> to Mono<List<ProcessedDataList>>
         .block();      // Block to wait for the result synchronously
 

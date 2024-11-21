@@ -10,6 +10,7 @@ import com.automatic.tech_blog.enums.SecuritySpecs;
 import com.automatic.tech_blog.utils.ExternalApiUtils;
 import com.automatic.tech_blog.utils.FileUtils;
 import com.automatic.tech_blog.utils.SecurityUtils;
+import com.automatic.tech_blog.utils.WordPressUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -18,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -27,10 +27,8 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @RequiredArgsConstructor
 public class WordPressServiceImpl implements WordPressService{
-
   private final ExternalApiUtils apiUtils;
-
-  private final String USER_NAME = "hos0917@gmail.com";
+  private final WordPressUtils wordPressUtils;
   private String password;
 
   @Override
@@ -45,7 +43,8 @@ public class WordPressServiceImpl implements WordPressService{
     }
 
     // 2. Get the WordPress token
-    String token = getWordPressToken(password);
+    String token = wordPressUtils.getWordPressToken(password);
+    wordPressUtils.validateWordPressToken(token);
 
     // 3. Return the Flux of ProcessedDataList
     return Flux.fromIterable(mdFileLists.mdFileLists())
@@ -79,75 +78,6 @@ public class WordPressServiceImpl implements WordPressService{
         });
   }
 
-  private String getWordPressToken(String password) {
-    try {
-      // 1. Build URL with query string
-      String urlWithQuery = String.format(
-          "%s/token?username=%s&password=%s",
-          ExternalUrls.WORD_PRESS_KIWIJAM_V1.getUrl(),
-          USER_NAME,
-          password
-      );
-
-      // 2. Build WordPress API request with query string
-      HttpHeaders headers = new HttpHeaders();
-      headers.set("Content-Type", "application/json");
-
-      ExternalApiRequest tokenRequest = new ExternalApiRequest(
-          HttpMethod.POST,
-          headers,
-          urlWithQuery,
-          null
-      );
-
-      // 3. Call the API and parse the response to get jwt_token
-      ResponseEntity<String> tokenResponse = apiUtils.callAPI(tokenRequest);
-      if(tokenResponse == null || tokenResponse.getBody() == null)
-        throw new IllegalStateException("Token response is null");
-
-      JsonObject tokenJson = JsonParser.parseString(tokenResponse.getBody()).getAsJsonObject();
-      if (!tokenJson.has("jwt_token"))
-        throw new IllegalStateException("Token not found in response");
-
-      String jwtToken = tokenJson.get("jwt_token").getAsString();
-
-      // 4. Validate the token
-      validateWordPressToken(jwtToken);
-
-      // 5. Return the validated token
-      return jwtToken;
-    } catch (Exception e) {
-      log.error("Failed to retrieve or validate WordPress token", e);
-      throw new IllegalStateException("Error while retrieving WordPress token", e);
-    }
-  }
-
-  private void validateWordPressToken(String jwtToken) {
-    // 1. Build WordPress API request for token validation
-    HttpHeaders headers = new HttpHeaders();
-    headers.set("Authorization", "Bearer " + jwtToken);
-
-    ExternalApiRequest validateRequest = new ExternalApiRequest(
-        HttpMethod.GET,
-        headers,
-        ExternalUrls.WORD_PRESS_KIWIJAM_V1.getUrl() + "/token-validate",
-        null
-    );
-
-    // 2. Call the API and validate the response
-    ResponseEntity<String>  validateResponse = apiUtils.callAPI(validateRequest);
-    if(validateResponse == null || validateResponse.getBody() == null)
-      throw new IllegalStateException("Token validation response is null");
-
-    // 3. Parse the response and check status and message
-    JsonObject validateJson = JsonParser.parseString(validateResponse.getBody()).getAsJsonObject();
-    if (!"TRUE".equals(validateJson.get("status").getAsString()) ||
-        !"VALID_TOKEN".equals(validateJson.get("message").getAsString()))
-      throw new IllegalStateException("Invalid WordPress token");
-
-    log.info("WordPress token validated successfully");
-  }
-
   private ExternalApiRequest buildApiRequest(MdFileInfo mdFileInfo, String token) {
     // 1. Set HTTP headers
     HttpHeaders headers = new HttpHeaders();
@@ -176,5 +106,4 @@ public class WordPressServiceImpl implements WordPressService{
         body
     );
   }
-
 }

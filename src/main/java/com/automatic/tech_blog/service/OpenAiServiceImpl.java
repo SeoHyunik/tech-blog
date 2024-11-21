@@ -1,5 +1,6 @@
 package com.automatic.tech_blog.service;
 
+import com.automatic.tech_blog.dto.request.EditTechNotesRequest;
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
 import com.automatic.tech_blog.dto.request.OpenAiRequest;
 import com.automatic.tech_blog.dto.response.OpenAiResponse;
@@ -35,14 +36,14 @@ public class OpenAiServiceImpl implements OpenAiService {
   private final OpenAiUtils openAiUtils;
 
   @Override
-  public Flux<ProcessedDataList> editTechNotes(MdFileLists mdFileLists, GoogleAuthInfo googleAuthInfo) {
+  public Flux<ProcessedDataList> editTechNotes(EditTechNotesRequest request) {
     // 1. Scan the local directory for existing HTML files (Sync Job)
     Set<String> existingHtmlFiles = FileUtils.getExistingHtmlFiles();
 
     // 2. Filter and process markdown files (Async Job)
-    return Flux.fromIterable(mdFileLists.mdFileLists())
+    return Flux.fromIterable( request.mdFileLists().mdFileLists())
         .filter(mdFileInfo -> !existingHtmlFiles.contains(mdFileInfo.fileName().replace(".md", ".html")))
-        .flatMap(mdFileInfo -> processMarkdownFileAsync(mdFileInfo, googleAuthInfo));
+        .flatMap(mdFileInfo -> processMarkdownFileAsync(mdFileInfo, request.googleAuthInfo()));
   }
 
 

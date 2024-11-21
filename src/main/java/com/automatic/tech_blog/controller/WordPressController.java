@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,15 +21,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(value = {"/blog/api/v1/wp"})
 public class WordPressController {
   private final WordPressService wpService;
-  /*TODO: Upload html file on WordPress Blog*/
-  @PostMapping("/upload-html")
+
+  @PostMapping("/post-articles")
   @ResponseStatus(HttpStatus.CREATED)
-  public ApiResponse uploadHtml(@RequestBody @Valid MdFileLists mdFileLists) {
-    return new ApiResponse(
-        HttpStatus.CREATED.value(),
-        wpService.postArticlesToBlog(mdFileLists),
-        new Date(),
-        true
-    );
+  public Mono<ApiResponse> postArticles(@RequestBody @Valid MdFileLists mdFileLists) {
+    return wpService.postArticlesToBlog(mdFileLists)
+        .collectList()
+        .map(processedDataList -> new ApiResponse(
+            HttpStatus.CREATED.value(),
+            processedDataList,
+            new Date(),
+            true
+        ));
   }
 }
