@@ -29,12 +29,14 @@ import reactor.core.publisher.Mono;
 public class WordPressServiceImpl implements WordPressService{
   private final ExternalApiUtils apiUtils;
   private final WordPressUtils wordPressUtils;
-  private String password;
 
   @Override
   public Flux<ProcessedDataList> postArticlesToBlog(MdFileLists mdFileLists) {
     // 1. Scan the local directory for existing HTML files (Sync Job)
     Set<String> existingHtmlFiles = FileUtils.getExistingHtmlFiles();
+    log.info("Existing HTML Files: {}", existingHtmlFiles);
+
+    String password;
     try {
       password = SecurityUtils.decryptAuthFile(SecuritySpecs.KIWIJAM_PW_FILE_PATH.getValue());
     } catch (Exception e) {
@@ -48,15 +50,31 @@ public class WordPressServiceImpl implements WordPressService{
 
     // 3. Return the Flux of ProcessedDataList
     return Flux.fromIterable(mdFileLists.mdFileLists())
-        .filter(mdFileInfo -> !existingHtmlFiles.contains(mdFileInfo.fileName().replace(".md", ".html")))
+        .doOnNext(mdFileInfo -> log.info("Processing File: {}", mdFileInfo.fileName()))
+        .filter(mdFileInfo -> {
+          boolean isContained = existingHtmlFiles.contains(mdFileInfo.fileName().replace(".md", ".html"));
+          log.info("File: {} -> in HTML lists: {}", mdFileInfo.fileName(), isContained);
+          return isContained;
+        })
+        .doOnComplete(() -> log.info("No files passed the filter"))
         .flatMap(mdFileInfo -> postArticles(mdFileInfo, token));
   }
 
   private Mono<ProcessedDataList> postArticles(MdFileInfo mdFileInfo, String token) {
-    // 1. Make API request to WordPress
-    ExternalApiRequest apiRequest = buildApiRequest(mdFileInfo, token);
+    // 1. Create WordPressRequest object
+    WordPressRequest request = new WordPressRequest(
+        mdFileInfo.fileName().replace(".md", ""),
+        FileUtils.getHtmlContent(mdFileInfo.fileName().replace(".md", ".html")),
+        "open",
+        "publish",
+        "3",
+        "");
 
-    // 2. Call the API and process the response
+    // 2. Build API request
+    ExternalApiRequest apiRequest = buildApiRequest(request, token);
+    log.info("API Request: {}", apiRequest);
+
+    // 3. Call the API and process the response
     return Mono.fromCallable(() -> apiUtils.callAPI(apiRequest))
         .flatMap(response -> {
           if (response == null || response.getBody() == null) {
@@ -64,12 +82,11 @@ public class WordPressServiceImpl implements WordPressService{
             return Mono.empty();
           }
 
-          // 3. Parse response to extract id and slug (name)
-          try {
+          try {// 4. Parse the response
             JsonObject jsonResponse = JsonParser.parseString(response.getBody()).getAsJsonObject();
             String id = jsonResponse.get("id").getAsString();
             String name = jsonResponse.get("slug").getAsString();
-
+            log.info("Parsed Response -> ID: {}, Name: {}", id, name);
             return Mono.just(new ProcessedDataList(id, name));
           } catch (Exception e) {
             log.error("Error parsing response for file ID: {}", mdFileInfo.id(), e);
@@ -78,27 +95,18 @@ public class WordPressServiceImpl implements WordPressService{
         });
   }
 
-  private ExternalApiRequest buildApiRequest(MdFileInfo mdFileInfo, String token) {
+
+  private ExternalApiRequest buildApiRequest(WordPressRequest request, String token) {
     // 1. Set HTTP headers
     HttpHeaders headers = new HttpHeaders();
     headers.add("Authorization", "Bearer " + token);
     headers.add("Content-Type", "application/json");
 
-    // 2. Create WordPressRequest object
-    WordPressRequest request = new WordPressRequest(
-        mdFileInfo.directory(),
-        mdFileInfo.id(),
-        "open",
-        "publish",
-        "3",
-        "1"
-    );
-
-    // 3. Convert WordPressRequest to JSON using Gson
+    // 2. Convert WordPressRequest to JSON using Gson
     Gson gson = new Gson();
     String body = gson.toJson(request);
 
-    // 4. Return ApiRequest
+    // 3. Return ApiRequest
     return new ExternalApiRequest(
         HttpMethod.POST,
         headers,

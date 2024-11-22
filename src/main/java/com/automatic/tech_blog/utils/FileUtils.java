@@ -2,6 +2,7 @@ package com.automatic.tech_blog.utils;
 
 import com.automatic.tech_blog.enums.InternalPaths;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,4 +32,16 @@ public class FileUtils {
         throw new IllegalStateException("Failed to scan existing HTML files", e);
       }
     }
+
+  public static String getHtmlContent(String fileName) {
+    try {
+      Path filePath = Paths.get(InternalPaths.HTML_SAVE_DIR.getPath(), fileName);
+
+      // Read the file content as bytes and convert to String using UTF-8
+      byte[] fileBytes = Files.readAllBytes(filePath);
+      return new String(fileBytes, StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new IllegalStateException("Failed to read HTML file: " + fileName, e);
+    }
+  }
 }
