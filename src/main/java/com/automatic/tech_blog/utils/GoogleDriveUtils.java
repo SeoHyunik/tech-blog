@@ -61,29 +61,33 @@ public class GoogleDriveUtils {
         : null;
   }
 
-  public void findMdFilesInDirectory(Drive driveService, String directoryId,
-      List<MdFileInfo> mdFileInfos, String parentFolderName) throws IOException {
-    // 1. Search for .md files within the directory
+  public void findMdFilesInDirectory(
+      Drive driveService, String directoryId, List<MdFileInfo> mdFileInfos, String parentFolderName) throws IOException {
+
+    // 1. Search for all files in the directory
     FileList result = driveService.files().list()
-        .setQ("'" + directoryId + "' in parents and mimeType != 'application/vnd.google-apps.folder'")
-        .setFields("files(id, name, createdTime, modifiedTime)")  // Include createdTime and modifiedTime
+        .setQ("'" + directoryId + "' in parents")
+        .setFields("files(id, name, mimeType, createdTime, modifiedTime)")  // Include all file metadata
         .execute();
 
-    // 2. Add file details to the result list
     List<File> files = result.getFiles();
     if (files != null && !files.isEmpty()) {
       for (File file : files) {
-        if (file.getName().endsWith(".md")) {
+        if ("application/vnd.google-apps.folder".equals(file.getMimeType())) {
+          // 2. If the file is a folder, recursively scan it
+          findMdFilesInDirectory(driveService, file.getId(), mdFileInfos, file.getName());
+        } else if (file.getName().endsWith(".md")) {
+          // 3. If the file is an .md file, add it to the list
           String fileName = new String(file.getName().getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
           Date createdAt = FunctionUtils.convertGoogleDateTimeToDate(file.getCreatedTime());
           Date modifiedAt = FunctionUtils.convertGoogleDateTimeToDate(file.getModifiedTime());
 
-          // 3. Add file details including folder name, createdTime, and modifiedTime
           mdFileInfos.add(new MdFileInfo(fileName, file.getId(), parentFolderName, createdAt, modifiedAt, null));
         }
       }
     }
   }
+
 
   public String getFileContent(Drive driveService, String fileId, GoogleAuthInfo googleAuthInfo) {
     try {

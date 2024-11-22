@@ -5,7 +5,6 @@ import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
 import com.automatic.tech_blog.dto.request.OpenAiRequest;
 import com.automatic.tech_blog.dto.response.OpenAiResponse;
 import com.automatic.tech_blog.dto.service.MdFileInfo;
-import com.automatic.tech_blog.dto.service.MdFileLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.enums.InternalPaths;
 import com.automatic.tech_blog.enums.SecuritySpecs;
