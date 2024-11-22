@@ -14,6 +14,7 @@ import com.automatic.tech_blog.utils.WordPressUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,15 +49,24 @@ public class WordPressServiceImpl implements WordPressService{
     String token = wordPressUtils.getWordPressToken(password);
     wordPressUtils.validateWordPressToken(token);
 
-    // 3. Return the Flux of ProcessedDataList
+    // 3. Get titles already posted to WordPress
+    List<String> postedTitles = wordPressUtils.getPublishedArticleTitles(token);
+
+    // 4. Return the Flux of ProcessedDataList
     return Flux.fromIterable(mdFileLists.mdFileLists())
         .doOnNext(mdFileInfo -> log.info("Processing File: {}", mdFileInfo.fileName()))
         .filter(mdFileInfo -> {
-          boolean isContained = existingHtmlFiles.contains(mdFileInfo.fileName().replace(".md", ".html"));
-          log.info("File: {} -> in HTML lists: {}", mdFileInfo.fileName(), isContained);
-          return isContained;
+          // Check if the file is in the existing HTML files
+          boolean isInHtmlFiles = existingHtmlFiles.contains(mdFileInfo.fileName().replace(".md", ".html"));
+          // Check if the title is already posted to WordPress
+          boolean isTitlePosted = postedTitles.contains(mdFileInfo.fileName().replace(".md", ""));
+
+          log.info("File: {} -> in HTML list: {}, already posted: {}",
+              mdFileInfo.fileName(), isInHtmlFiles, isTitlePosted);
+          // Only process files that are not already posted
+          return isInHtmlFiles && !isTitlePosted;
         })
-        .doOnComplete(() -> log.info("No files passed the filter"))
+        .switchIfEmpty(Mono.fromRunnable(() -> log.info("No files passed the filter")))
         .flatMap(mdFileInfo -> postArticles(mdFileInfo, token));
   }
 

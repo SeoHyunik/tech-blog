@@ -2,8 +2,13 @@ package com.automatic.tech_blog.utils;
 
 import com.automatic.tech_blog.dto.request.ExternalApiRequest;
 import com.automatic.tech_blog.enums.ExternalUrls;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -82,4 +87,41 @@ public class WordPressUtils {
 
     log.info("WordPress token validated successfully");
   }
+
+  public List<String> getPublishedArticleTitles(String jwtToken) {
+    try {
+      // 1. Build WordPress API request to fetch posts
+      HttpHeaders headers = new HttpHeaders();
+      headers.set("Authorization", "Bearer " + jwtToken);
+
+      ExternalApiRequest getPostsRequest = new ExternalApiRequest(
+          HttpMethod.GET,
+          headers,
+          ExternalUrls.WORD_PRESS_KIWIJAM_V2.getUrl() + "/posts",
+          null
+      );
+
+      // 2. Call the API and parse the response
+      ResponseEntity<String> postsResponse = apiUtils.callAPI(getPostsRequest);
+      if (postsResponse == null || postsResponse.getBody() == null) {
+        throw new IllegalStateException("Failed to retrieve posts: Response is null");
+      }
+
+      // 3. Parse the response to extract titles
+      List<String> titles = new ArrayList<>();
+      JsonArray postsArray = JsonParser.parseString(postsResponse.getBody()).getAsJsonArray();
+
+      postsArray.forEach(postElement -> {
+        JsonObject postObject = postElement.getAsJsonObject();
+        JsonObject titleObject = postObject.getAsJsonObject("title");
+        String renderedTitle = titleObject.get("rendered").getAsString();
+        titles.add(renderedTitle);
+      });
+      return titles;
+    } catch (Exception e) {
+      log.error("Failed to retrieve published article titles", e);
+      throw new IllegalStateException("Error while fetching article titles", e);
+    }
+  }
+
 }
