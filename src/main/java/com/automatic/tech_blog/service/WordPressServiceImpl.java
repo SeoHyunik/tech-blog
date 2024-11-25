@@ -7,6 +7,7 @@ import com.automatic.tech_blog.dto.service.MdFileLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.enums.ExternalUrls;
 import com.automatic.tech_blog.enums.SecuritySpecs;
+import com.automatic.tech_blog.enums.WpCategories;
 import com.automatic.tech_blog.utils.ExternalApiUtils;
 import com.automatic.tech_blog.utils.FileUtils;
 import com.automatic.tech_blog.utils.SecurityUtils;
@@ -77,7 +78,7 @@ public class WordPressServiceImpl implements WordPressService{
         FileUtils.getHtmlContent(mdFileInfo.fileName().replace(".md", ".html")),
         "open",
         "publish",
-        "3",
+        WpCategories.findCategoryId(mdFileInfo.directory()),
         "");
 
     // 2. Build API request

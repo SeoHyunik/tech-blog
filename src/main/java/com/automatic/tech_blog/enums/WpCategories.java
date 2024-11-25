@@ -3,21 +3,21 @@ package com.automatic.tech_blog.enums;
 import java.util.Arrays;
 
 public enum WpCategories {
-  BUSINESS("Business Insights", 1),
-  CARS("Cars and Vehicles", 4),
-  FINANCE("Finance", 2),
-  FOOD("Food and Recipes", 12),
-  HEALTH("Health and Wellness", 7),
-  HOME("HOME", 6),
-  JAVA("Java", 9),
-  LIFESTYLE("Lifestyle Hacks", 11),
-  TECHNOLOGY("Technology Trends", 3),
-  TRAVEL("Travel and Adventure", 8);
+  BUSINESS("Business Insights", "1"),
+  CARS("Cars and Vehicles", "4"),
+  FINANCE("Finance", "2"),
+  FOOD("Food and Recipes", "12"),
+  HEALTH("Health and Wellness", "7"),
+  HOME("HOME", "6"),
+  JAVA("JAVA-SPRING", "9"),
+  LIFESTYLE("Lifestyle Hacks", "11"),
+  TECHNOLOGY("IT Knowledge", "3"),
+  TRAVEL("Travel and Adventure", "8");
 
   private final String name;
-  private final int id;
+  private final String id;
 
-  WpCategories(String name, int id) {
+  WpCategories(String name, String id) {
     this.name = name;
     this.id = id;
   }
@@ -26,36 +26,30 @@ public enum WpCategories {
     return name;
   }
 
-  public int getId() {
+  public String getId() {
     return id;
   }
 
   /**
    * Finds the category ID for a given directory name.
    * Uses a similarity check for finding the closest match.
-   *
-   * @param directoryName the directory name
-   * @return the corresponding category ID, or -1 if not found
    */
-  public static int findCategoryId(String directoryName) {
+  public static String findCategoryId(String directoryName) {
     return Arrays.stream(WpCategories.values())
         .filter(category -> isSimilar(directoryName, category.name))
         .findFirst()
         .map(WpCategories::getId)
-        .orElse(-1);
+        .orElse("3");
   }
 
   /**
-   * Checks if two strings are similar.
-   * You can replace this logic with a more robust similarity check if needed.
-   *
-   * @param input the input directory name
-   * @param categoryName the category name
-   * @return true if similar, false otherwise
+   * Checks if the input belongs to the category.
+   * JAVA-SPRING contains JPA, WebFlux, etc.
+   * IT Knowledge contains AI, AKKA, etc.
    */
   private static boolean isSimilar(String input, String categoryName) {
-    input = input.toLowerCase();
-    categoryName = categoryName.toLowerCase();
-    return categoryName.contains(input) || input.contains(categoryName);
+    return input.equalsIgnoreCase(categoryName) ||
+        (categoryName.equals("JAVA-SPRING") && (input.contains("JPA")) || input.contains("WebFlux")) ||
+        (categoryName.equals("IT Knowledge") && (input.contains("AI") || input.contains("AKKA")));
   }
 }
