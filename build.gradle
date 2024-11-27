@@ -105,7 +105,19 @@ clean {
 def querydslDir = "$buildDir/generated/querydsl"
 
 sourceSets {
-	main.java.srcDirs += [ querydslDir ]
+	main {
+		java {
+			srcDirs += querydslDir
+		}
+	}
+}
+
+tasks.withType(JavaCompile) {
+	options.annotationProcessorGeneratedSourcesDirectory = file(querydslDir)
+	doFirst {
+		println "Ensuring QueryDSL directory exists: $querydslDir"
+		file(querydslDir).mkdirs()
+	}
 }
 
 tasks.withType(JavaCompile) {

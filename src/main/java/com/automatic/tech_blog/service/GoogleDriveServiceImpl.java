@@ -7,6 +7,7 @@ import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.entity.TbMdFiles;
 import com.automatic.tech_blog.enums.TargetFolders;
 import com.automatic.tech_blog.repository.MdFileRepository;
+import com.automatic.tech_blog.repository.q_repo.MdFileQRepo;
 import com.automatic.tech_blog.utils.GoogleDriveUtils;
 import com.google.api.services.drive.Drive;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
 
   private final GoogleDriveUtils driveUtils;
   private final MdFileRepository mdFileRepository;
+  private final MdFileQRepo mdFileQRepo;
 
   @Override
   public MdFileLists scanFiles(GoogleAuthInfo authInfo) {
@@ -122,19 +124,20 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
     calendar.add(Calendar.HOUR, -24);
     Date since = calendar.getTime();
 
-    // 2. Find new files created or modified since the calculated timestamp
-    List<TbMdFiles> newFiles = mdFileRepository.findNewFiles(since);
-
-    // 3. Convert TbMdFiles to MdFileInfo
-    List<MdFileInfo> mdFileInfos = newFiles.stream()
-        .map(file -> new MdFileInfo(
-            file.getFileName(),
-            file.getFileId(),
-            file.getFilePath(),
-            file.getCreatedAt(),
-            file.getModifiedAt(),
-            file.getDeletedAt()))
-        .toList();
+//    // 2. Find new files created or modified since the calculated timestamp
+//    List<TbMdFiles> newFiles = mdFileRepository.findNewFiles(since);
+//
+//    // 3. Convert TbMdFiles to MdFileInfo
+//    List<MdFileInfo> mdFileInfos = newFiles.stream()
+//        .map(file -> new MdFileInfo(
+//            file.getFileName(),
+//            file.getFileId(),
+//            file.getFilePath(),
+//            file.getCreatedAt(),
+//            file.getModifiedAt(),
+//            file.getDeletedAt()))
+//        .toList();
+    List<MdFileInfo> mdFileInfos = mdFileQRepo.findNewFiles(since);
 
     return new MdFileLists(mdFileInfos);
   }
