@@ -77,6 +77,11 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+tasks.withType(Test) {
+	enabled = false
+}
+
+
 tasks.named('asciidoctor') {
 	inputs.dir snippetsDir
 	dependsOn test

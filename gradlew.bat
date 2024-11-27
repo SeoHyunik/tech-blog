@@ -36,7 +36,11 @@ set APP_HOME=%DIRNAME%
 for %%i in ("%APP_HOME%") do set APP_HOME=%%~fi
 
 @rem Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
-set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"
+set DEFAULT_JVM_OPTS="-Xmx512m" "-Xms128m"
+
+@rem Set the correct Java home for Gradle
+set JAVA_HOME=C:\Users\LG\.jdks\corretto-21.0.5
+set PATH=%JAVA_HOME%\bin;%PATH%
 
 @rem Find java.exe
 if defined JAVA_HOME goto findJavaFromJavaHome
