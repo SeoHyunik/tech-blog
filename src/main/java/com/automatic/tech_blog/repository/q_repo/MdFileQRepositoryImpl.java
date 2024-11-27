@@ -7,14 +7,25 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor
-public class MdFileQRepoImpl implements MdFileQRepo{
-
+public class MdFileQRepositoryImpl implements MdFileQRepository {
   private final JPAQueryFactory queryFactory;
+
+  @Override
+  public Optional<TbMdFiles> findByFileId(String fileId) {
+    QTbMdFiles tbMdFiles = QTbMdFiles.tbMdFiles;
+
+    TbMdFiles result = queryFactory.selectFrom(tbMdFiles)
+        .where(tbMdFiles.fileId.eq(fileId))
+        .fetchOne();
+
+    return Optional.ofNullable(result);
+  }
 
   @Override
   public List<MdFileInfo> findNewFiles(Date since) {
