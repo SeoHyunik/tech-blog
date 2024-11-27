@@ -81,6 +81,15 @@ tasks.withType(Test) {
 	enabled = false
 }
 
+tasks.named('clean') {
+	doFirst {
+		def buildDir = file("${project.buildDir}")
+		if (buildDir.exists()) {
+			println "Deleting build directory: ${buildDir}"
+			buildDir.deleteDir()
+		}
+	}
+}
 
 tasks.named('asciidoctor') {
 	inputs.dir snippetsDir
