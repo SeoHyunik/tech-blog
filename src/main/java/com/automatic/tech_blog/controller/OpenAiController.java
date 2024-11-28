@@ -1,9 +1,7 @@
 package com.automatic.tech_blog.controller;
 
 import com.automatic.tech_blog.dto.request.EditTechNotesRequest;
-import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
 import com.automatic.tech_blog.dto.response.ApiResponse;
-import com.automatic.tech_blog.dto.service.MdFileLists;
 import com.automatic.tech_blog.service.OpenAiService;
 import jakarta.validation.Valid;
 import java.util.Date;
@@ -27,11 +25,7 @@ public class OpenAiController {
   @PostMapping("/edit-tech-notes")
   @ResponseStatus(HttpStatus.CREATED)
   public Mono<ApiResponse> editTechNotes(@RequestBody @Valid EditTechNotesRequest request) {
-    // 1. Extract GoogleAuthInfo and MdFileLists
-    GoogleAuthInfo googleAuthInfo = request.googleAuthInfo();
-    MdFileLists mdFileLists = request.mdFileLists();
-
-    // 2. Call the service and wrap the response in a Mono
+    // 1. Call the service and wrap the response in a Mono
     return openAiService.editTechNotes(request)
         .collectList()
         .map(result -> new ApiResponse(

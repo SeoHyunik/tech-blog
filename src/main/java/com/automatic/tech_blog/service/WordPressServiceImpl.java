@@ -2,8 +2,8 @@ package com.automatic.tech_blog.service;
 
 import com.automatic.tech_blog.dto.request.ExternalApiRequest;
 import com.automatic.tech_blog.dto.request.WordPressRequest;
-import com.automatic.tech_blog.dto.service.MdFileInfo;
-import com.automatic.tech_blog.dto.service.MdFileLists;
+import com.automatic.tech_blog.dto.service.FileInfo;
+import com.automatic.tech_blog.dto.service.FileLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.enums.ExternalUrls;
 import com.automatic.tech_blog.enums.SecuritySpecs;
@@ -33,7 +33,7 @@ public class WordPressServiceImpl implements WordPressService{
   private final WordPressUtils wordPressUtils;
 
   @Override
-  public Flux<ProcessedDataList> postArticlesToBlog(MdFileLists mdFileLists) {
+  public Flux<ProcessedDataList> postArticlesToBlog(FileLists fileLists) {
     // 1. Scan the local directory for existing HTML files (Sync Job)
     Set<String> existingHtmlFiles = FileUtils.getExistingHtmlFiles();
     log.info("Existing HTML Files: {}", existingHtmlFiles);
@@ -54,7 +54,7 @@ public class WordPressServiceImpl implements WordPressService{
     List<String> postedTitles = wordPressUtils.getPublishedArticleTitles(token);
 
     // 4. Return the Flux of ProcessedDataList
-    return Flux.fromIterable(mdFileLists.mdFileLists())
+    return Flux.fromIterable(fileLists.fileLists())
         .doOnNext(mdFileInfo -> log.info("Processing File: {}", mdFileInfo.fileName()))
         .filter(mdFileInfo -> {
           // Check if the file is in the existing HTML files
@@ -71,14 +71,14 @@ public class WordPressServiceImpl implements WordPressService{
         .flatMap(mdFileInfo -> postArticles(mdFileInfo, token));
   }
 
-  private Mono<ProcessedDataList> postArticles(MdFileInfo mdFileInfo, String token) {
+  private Mono<ProcessedDataList> postArticles(FileInfo fileInfo, String token) {
     // 1. Create WordPressRequest object
     WordPressRequest request = new WordPressRequest(
-        mdFileInfo.fileName().replace(".md", ""),
-        FileUtils.getHtmlContent(mdFileInfo.fileName().replace(".md", ".html")),
+        fileInfo.fileName().replace(".md", ""),
+        FileUtils.getHtmlContent(fileInfo.fileName().replace(".md", ".html")),
         "open",
         "publish",
-        WpCategories.findCategoryId(mdFileInfo.directory()),
+        WpCategories.findCategoryId(fileInfo.directory()),
         "");
 
     // 2. Build API request
@@ -89,7 +89,7 @@ public class WordPressServiceImpl implements WordPressService{
     return Mono.fromCallable(() -> apiUtils.callAPI(apiRequest))
         .flatMap(response -> {
           if (response == null || response.getBody() == null) {
-            log.warn("Response is null for file ID: {}", mdFileInfo.id());
+            log.warn("Response is null for file ID: {}", fileInfo.id());
             return Mono.empty();
           }
 
@@ -100,7 +100,7 @@ public class WordPressServiceImpl implements WordPressService{
             log.info("Parsed Response -> ID: {}, Name: {}", id, name);
             return Mono.just(new ProcessedDataList(id, name));
           } catch (Exception e) {
-            log.error("Error parsing response for file ID: {}", mdFileInfo.id(), e);
+            log.error("Error parsing response for file ID: {}", fileInfo.id(), e);
             return Mono.error(new IllegalStateException("Failed to process response"));
           }
         });

@@ -1,7 +1,7 @@
 package com.automatic.tech_blog.utils;
 
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
-import com.automatic.tech_blog.dto.service.MdFileInfo;
+import com.automatic.tech_blog.dto.service.FileInfo;
 import com.automatic.tech_blog.enums.ExternalUrls;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.GenericUrl;
@@ -62,7 +62,7 @@ public class GoogleDriveUtils {
   }
 
   public void findMdFilesInDirectory(
-      Drive driveService, String directoryId, List<MdFileInfo> mdFileInfos, String parentFolderName) throws IOException {
+      Drive driveService, String directoryId, List<FileInfo> fileInfos, String parentFolderName) throws IOException {
 
     // 1. Search for all files in the directory
     FileList result = driveService.files().list()
@@ -75,14 +75,14 @@ public class GoogleDriveUtils {
       for (File file : files) {
         if ("application/vnd.google-apps.folder".equals(file.getMimeType())) {
           // 2. If the file is a folder, recursively scan it
-          findMdFilesInDirectory(driveService, file.getId(), mdFileInfos, file.getName());
-        } else if (file.getName().endsWith(".md")) {
+          findMdFilesInDirectory(driveService, file.getId(), fileInfos, file.getName());
+        } else if (file.getName().endsWith(".md") || file.getName().contains("Pasted image")) {
           // 3. If the file is an .md file, add it to the list
           String fileName = new String(file.getName().getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
           Date createdAt = FunctionUtils.convertGoogleDateTimeToDate(file.getCreatedTime());
           Date modifiedAt = FunctionUtils.convertGoogleDateTimeToDate(file.getModifiedTime());
 
-          mdFileInfos.add(new MdFileInfo(fileName, file.getId(), parentFolderName, createdAt, modifiedAt, null));
+          fileInfos.add(new FileInfo(fileName, file.getId(), parentFolderName, createdAt, modifiedAt, null));
         }
       }
     }
@@ -113,5 +113,9 @@ public class GoogleDriveUtils {
       log.error("Error retrieving content for file ID: {}", fileId, e);
       return null;
     }
+  }
+
+  public boolean isMdFile(String fileName) {
+    return fileName.endsWith(".md") && !(fileName.contains("Pasted image") || fileName.contains("Exported image"));
   }
 }

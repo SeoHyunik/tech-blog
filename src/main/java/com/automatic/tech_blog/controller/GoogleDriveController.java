@@ -2,7 +2,7 @@ package com.automatic.tech_blog.controller;
 
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
 import com.automatic.tech_blog.dto.response.ApiResponse;
-import com.automatic.tech_blog.dto.service.MdFileLists;
+import com.automatic.tech_blog.dto.service.FileLists;
 import com.automatic.tech_blog.service.GoogleDriveService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,10 +34,10 @@ public class GoogleDriveController {
     /*TODO : Upload file infos into DB*/
     @PostMapping("/upload-files")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse uploadFiles(@RequestBody @Valid MdFileLists mdFileLists) {
+    public ApiResponse uploadFiles(@RequestBody @Valid FileLists fileLists) {
         return new ApiResponse(
             HttpStatus.CREATED.value(),
-            googleDriveService.uploadFiles(mdFileLists),
+            googleDriveService.uploadFiles(fileLists),
             new Date(),
             true);
     }

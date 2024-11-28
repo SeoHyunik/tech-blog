@@ -8,7 +8,8 @@ public enum TargetFolders {
   ALGORITHM("Algorithm"),
   IT_KNOWLEDGE("IT Knowledge"),
   JAVA_SPRING("JAVA-SPRING"),
-  NOTES("Notes");
+  NOTES("Notes"),
+  ATTACHED_IMAGES("Attached File"); // Attached File is a folder for images
 
   private final String folderName;
 

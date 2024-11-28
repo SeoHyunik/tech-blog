@@ -1,6 +1,6 @@
 package com.automatic.tech_blog.repository.q_repo;
 
-import com.automatic.tech_blog.dto.service.MdFileInfo;
+import com.automatic.tech_blog.dto.service.FileInfo;
 import com.automatic.tech_blog.entity.QTbMdFiles;
 import com.automatic.tech_blog.entity.TbMdFiles;
 import com.querydsl.core.types.Projections;
@@ -28,12 +28,12 @@ public class MdFileQRepositoryImpl implements MdFileQRepository {
   }
 
   @Override
-  public List<MdFileInfo> findNewFiles(Date since) {
+  public List<FileInfo> findNewFiles(Date since) {
     QTbMdFiles tbMdFiles = QTbMdFiles.tbMdFiles;
 
     return queryFactory
         .select(Projections.constructor(
-            MdFileInfo.class,
+            FileInfo.class,
             tbMdFiles.fileName,
             tbMdFiles.fileId,
             tbMdFiles.filePath,

@@ -2,7 +2,7 @@ package com.automatic.tech_blog.service;
 
 import com.automatic.tech_blog.dto.request.EditTechNotesRequest;
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
-import com.automatic.tech_blog.dto.service.MdFileLists;
+import com.automatic.tech_blog.dto.service.FileLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.utils.GoogleAuthUtils;
 import java.util.List;
@@ -17,9 +17,7 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
@@ -61,27 +59,30 @@ class GoogleDriveServiceImplTest {
     when(externalApi.getGoogleCredentials(authInfo)).thenCallRealMethod();
 
     // Act - Scan files from Google Drive
-    MdFileLists mdFileLists = googleService.scanFiles(authInfo);
+    FileLists fileLists = googleService.scanFiles(authInfo);
 
     // Assert - Check if the file list is not null and contains files
-    assertNotNull(mdFileLists, "File list should not be null");
-    mdFileLists.mdFileLists().forEach(file -> System.out.println("File Name: " + file.fileName() + ", File Id: " + file.id() + ", Directory: " + file.directory()+ ", Created At: "+ file.createdAt()+ ", Modified At: "+ file.modifiedAt()));
+    assertNotNull(fileLists, "File list should not be null");
+    fileLists.fileLists().forEach(file -> System.out.println("File Name: " + file.fileName() + ", File Id: " + file.id() + ", Directory: " + file.directory()+ ", Created At: "+ file.createdAt()+ ", Modified At: "+ file.modifiedAt()));
 
     // Act - Upload scanned files to the database
-    List<ProcessedDataList> result = googleService.uploadFiles(mdFileLists);
+    List<ProcessedDataList> result = googleService.uploadFiles(fileLists);
 
     // Assert - Check if the upload was successful
     assertNotNull(result, "Upload result should not be null");
-    System.out.println("Upload Result: " + result);
+
+    // Act - Upload images to the database
+    List<ProcessedDataList> imgResult = googleService.uploadPastedImages(fileLists);
+    System.out.println("Upload Result: " + imgResult);
   }
   @Test
   void testGetNewFiles() {
     // Act - Retrieve new or modified files
-    MdFileLists newFiles = googleService.getNewFiles();
+    FileLists newFiles = googleService.getNewFiles();
 
     // Assert - Check if the returned file list is not null and contains expected files
     assertNotNull(newFiles, "New files list should not be null");
-    newFiles.mdFileLists().forEach(file -> {
+    newFiles.fileLists().forEach(file -> {
       System.out.println("New File Name: " + file.fileName() +
           ", File Id: " + file.id() +
           ", Directory: " + file.directory() +
@@ -90,7 +91,7 @@ class GoogleDriveServiceImplTest {
     });
 
     // Optional: Additional checks for file properties or specific conditions
-    assert (!newFiles.mdFileLists().isEmpty()) : "New files list should not be empty";
+    assert (!newFiles.fileLists().isEmpty()) : "New files list should not be empty";
 
     EditTechNotesRequest editTechNotesRequest = new EditTechNotesRequest(authInfo, newFiles);
     // Act - Process the files using the OpenAiService

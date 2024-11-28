@@ -1,7 +1,7 @@
 package com.automatic.tech_blog.controller;
 
 import com.automatic.tech_blog.dto.response.ApiResponse;
-import com.automatic.tech_blog.dto.service.MdFileLists;
+import com.automatic.tech_blog.dto.service.FileLists;
 import com.automatic.tech_blog.service.WordPressService;
 import jakarta.validation.Valid;
 import java.util.Date;
@@ -24,8 +24,8 @@ public class WordPressController {
 
   @PostMapping("/post-articles")
   @ResponseStatus(HttpStatus.CREATED)
-  public Mono<ApiResponse> postArticles(@RequestBody @Valid MdFileLists mdFileLists) {
-    return wpService.postArticlesToBlog(mdFileLists)
+  public Mono<ApiResponse> postArticles(@RequestBody @Valid FileLists fileLists) {
+    return wpService.postArticlesToBlog(fileLists)
         .collectList()
         .map(processedDataList -> new ApiResponse(
             HttpStatus.CREATED.value(),

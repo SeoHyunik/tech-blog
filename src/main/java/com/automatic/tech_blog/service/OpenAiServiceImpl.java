@@ -4,7 +4,7 @@ import com.automatic.tech_blog.dto.request.EditTechNotesRequest;
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
 import com.automatic.tech_blog.dto.request.OpenAiRequest;
 import com.automatic.tech_blog.dto.response.OpenAiResponse;
-import com.automatic.tech_blog.dto.service.MdFileInfo;
+import com.automatic.tech_blog.dto.service.FileInfo;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.enums.InternalPaths;
 import com.automatic.tech_blog.enums.SecuritySpecs;
@@ -40,20 +40,20 @@ public class OpenAiServiceImpl implements OpenAiService {
     Set<String> existingHtmlFiles = FileUtils.getExistingHtmlFiles();
 
     // 2. Filter and process markdown files (Async Job)
-    return Flux.fromIterable( request.mdFileLists().mdFileLists())
+    return Flux.fromIterable( request.fileLists().fileLists())
         .filter(mdFileInfo -> !existingHtmlFiles.contains(mdFileInfo.fileName().replace(".md", ".html")))
         .flatMap(mdFileInfo -> processMarkdownFileAsync(mdFileInfo, request.googleAuthInfo()));
   }
 
 
 
-  private Mono<ProcessedDataList> processMarkdownFileAsync(MdFileInfo mdFileInfo, GoogleAuthInfo googleAuthInfo) {
+  private Mono<ProcessedDataList> processMarkdownFileAsync(FileInfo fileInfo, GoogleAuthInfo googleAuthInfo) {
     return Mono.fromCallable(() -> googleDriveUtils.createDriveService(googleAuthInfo, "kiwijam"))
         .flatMap(driveService -> Mono.fromCallable(() ->
-            googleDriveUtils.getFileContent(driveService, mdFileInfo.id(), googleAuthInfo)))
+            googleDriveUtils.getFileContent(driveService, fileInfo.id(), googleAuthInfo)))
         .flatMap(fileContent -> fileContent != null
-            ? transformMarkdownToHtml(fileContent, mdFileInfo.fileName())
-            : Mono.fromRunnable(() -> log.info("File content is null for file ID: {}", mdFileInfo.id()))
+            ? transformMarkdownToHtml(fileContent, fileInfo.fileName())
+            : Mono.fromRunnable(() -> log.info("File content is null for file ID: {}", fileInfo.id()))
         );
   }
 

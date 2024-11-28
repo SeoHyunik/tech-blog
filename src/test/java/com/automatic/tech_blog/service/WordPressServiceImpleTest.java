@@ -1,6 +1,6 @@
 package com.automatic.tech_blog.service;
 
-import com.automatic.tech_blog.dto.service.MdFileLists;
+import com.automatic.tech_blog.dto.service.FileLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.utils.GoogleDriveUtils;
 import java.util.List;
@@ -26,13 +26,13 @@ class WordPressServiceImplTest {
   @Test
   void testPostArticlesToBlogWithGoogleDriveData() {
     // Step 1: Get new files from Google Drive
-    MdFileLists newFiles = googleService.getNewFiles();
+    FileLists newFiles = googleService.getNewFiles();
 
     assertNotNull(newFiles, "New files list should not be null");
-    assertFalse(newFiles.mdFileLists().isEmpty(), "New files list should not be empty");
+    assertFalse(newFiles.fileLists().isEmpty(), "New files list should not be empty");
 
     newFiles
-        .mdFileLists()
+        .fileLists()
         .forEach(
             file -> {
               System.out.println("File Name: " + file.fileName());

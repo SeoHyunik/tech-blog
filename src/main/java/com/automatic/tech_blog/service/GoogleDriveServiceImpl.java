@@ -1,13 +1,16 @@
 package com.automatic.tech_blog.service;
 
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
-import com.automatic.tech_blog.dto.service.MdFileInfo;
-import com.automatic.tech_blog.dto.service.MdFileLists;
+import com.automatic.tech_blog.dto.service.FileInfo;
+import com.automatic.tech_blog.dto.service.FileLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
+import com.automatic.tech_blog.entity.TbAttachedImages;
 import com.automatic.tech_blog.entity.TbMdFiles;
 import com.automatic.tech_blog.enums.TargetFolders;
 import com.automatic.tech_blog.repository.MdFileRepository;
+import com.automatic.tech_blog.repository.PastedImageRepository;
 import com.automatic.tech_blog.repository.q_repo.MdFileQRepository;
+import com.automatic.tech_blog.repository.q_repo.PastedImageQRepository;
 import com.automatic.tech_blog.utils.GoogleDriveUtils;
 import com.google.api.services.drive.Drive;
 import java.util.ArrayList;
@@ -32,29 +35,31 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
   private final GoogleDriveUtils driveUtils;
   private final MdFileRepository mdFileRepository;
   private final MdFileQRepository mdFileQRepository;
+  private final PastedImageRepository pastedImageRepository;
+  private final PastedImageQRepository pastedImageQRepository;
 
   @Override
-  public MdFileLists scanFiles(GoogleAuthInfo authInfo) {
+  public FileLists scanFiles(GoogleAuthInfo authInfo) {
     try {
       // 1. Create the Drive service
       Drive driveService = driveUtils.createDriveService(authInfo, "kiwijam");
 
       // 2. Scan for .md files in specific directories
       List<String> targetFolders = TargetFolders.getFolderNames();
-      List<MdFileInfo> mdFileInfos = new ArrayList<>();
+      List<FileInfo> fileInfos = new ArrayList<>();
 
       for (String folderName : targetFolders) {
         // 3. Find the target directory by name
         String folderId = driveUtils.findFolderIdByName(driveService, folderName);
         if (folderId != null) {
           // 4. If folder is found, scan for .md files within it
-          driveUtils.findMdFilesInDirectory(driveService, folderId, mdFileInfos, folderName);
+          driveUtils.findMdFilesInDirectory(driveService, folderId, fileInfos, folderName);
         } else {
           log.warn("Folder {} not found.", folderName);
         }
       }
 
-      return new MdFileLists(mdFileInfos);
+      return new FileLists(fileInfos);
     } catch (Exception e) {
       log.error("Error occurred while scanning files from Google Drive: {}", e.getMessage(), e);
       throw new IllegalStateException("Error occurred while scanning files from Google Drive", e);
@@ -64,42 +69,44 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
 
   @Override
   @Transactional
-  public List<ProcessedDataList> uploadFiles(MdFileLists mdFileLists) {
+  public List<ProcessedDataList> uploadFiles(FileLists fileLists) {
     // 1. Create a list to store processed data
     List<ProcessedDataList> processedData = new ArrayList<>();
 
-    mdFileLists.mdFileLists().forEach(mdFileInfo -> {
+    fileLists.fileLists().stream()
+        .filter(fileInfo -> driveUtils.isMdFile(fileInfo.fileName())) // Filter out non-Markdown files
+        .forEach(fileInfo -> {
       try {
         // 2. Fetch existing record by fileId if it exists
-        Optional<TbMdFiles> existingFile = mdFileQRepository.findByFileId(mdFileInfo.id());
+        Optional<TbMdFiles> existingFile = mdFileQRepository.findByFileId(fileInfo.id());
 
-        String newFilePath = mdFileInfo.directory();
+        String newFilePath = fileInfo.directory();
 
         if (existingFile.isPresent()) {
-          TbMdFiles fileInfo = existingFile.get();
+          TbMdFiles tbMdFileInfo = existingFile.get();
 
           // 3. Check if either modifiedAt or filePath has changed
-          boolean isModifiedAtDifferent = !Objects.equals(mdFileInfo.modifiedAt(), fileInfo.getModifiedAt());
-          boolean isFilePathDifferent = !Objects.equals(newFilePath, fileInfo.getFilePath());
+          boolean isModifiedAtDifferent = !Objects.equals(fileInfo.modifiedAt(), tbMdFileInfo.getModifiedAt());
+          boolean isFilePathDifferent = !Objects.equals(newFilePath, tbMdFileInfo.getFilePath());
 
           if (isModifiedAtDifferent || isFilePathDifferent) {
-            fileInfo.setModifiedAt(mdFileInfo.modifiedAt());  // Update modifiedAt only if different
-            fileInfo.setFileName(mdFileInfo.fileName());  // Always update fileName
-            fileInfo.setFilePath(newFilePath);  // Update filePath only if different
-            mdFileRepository.save(fileInfo);
-            log.info("Updated file with ID: {} and Name: {}", fileInfo.getFileId(), fileInfo.getFileName());
+            tbMdFileInfo.setModifiedAt(fileInfo.modifiedAt());  // Update modifiedAt only if different
+            tbMdFileInfo.setFileName(fileInfo.fileName());  // Always update fileName
+            tbMdFileInfo.setFilePath(newFilePath);  // Update filePath only if different
+            mdFileRepository.save(tbMdFileInfo);
+            log.info("Updated file with ID: {} and Name: {}", tbMdFileInfo.getFileId(), tbMdFileInfo.getFileName());
           }
 
           // 4. Add to processed data list
-          processedData.add(new ProcessedDataList(fileInfo.getFileId(), fileInfo.getFileName()));
+          processedData.add(new ProcessedDataList(tbMdFileInfo.getFileId(), tbMdFileInfo.getFileName()));
         } else {
           // 5. Insert new file
           TbMdFiles entity = new TbMdFiles();
-          entity.setFileId(mdFileInfo.id());
-          entity.setFileName(mdFileInfo.fileName());
+          entity.setFileId(fileInfo.id());
+          entity.setFileName(fileInfo.fileName());
           entity.setFilePath(newFilePath);
-          entity.setCreatedAt(mdFileInfo.createdAt());
-          entity.setModifiedAt(mdFileInfo.modifiedAt());
+          entity.setCreatedAt(fileInfo.createdAt());
+          entity.setModifiedAt(fileInfo.modifiedAt());
           mdFileRepository.save(entity);
 
           log.info("Inserted new file with ID: {} and Name: {}", entity.getFileId(), entity.getFileName());
@@ -108,25 +115,58 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
           processedData.add(new ProcessedDataList(entity.getFileId(), entity.getFileName()));
         }
       } catch (DataIntegrityViolationException | ConstraintViolationException e) {
-        log.error("Duplicate fileId encountered for file: {}", mdFileInfo.fileName());
+        log.error("Duplicate fileId encountered for file: {}", fileInfo.fileName());
         throw new IllegalStateException("Error occurred while uploading files", e);
       }
     });
-
     return processedData;
   }
 
-
   @Override
-  public MdFileLists getNewFiles() {
+  public FileLists getNewFiles() {
     // 1. Calculate the timestamp for 24 hours ago
     Calendar calendar = Calendar.getInstance();
     calendar.add(Calendar.HOUR, -24);
     Date since = calendar.getTime();
 
     // 2. Fetch new files from the database using Query DSL
-    List<MdFileInfo> mdFileInfos = mdFileQRepository.findNewFiles(since);
+    List<FileInfo> fileInfos = mdFileQRepository.findNewFiles(since);
 
-    return new MdFileLists(mdFileInfos);
+    return new FileLists(fileInfos);
+  }
+
+  @Override
+  @Transactional
+  public List<ProcessedDataList> uploadPastedImages(FileLists fileLists) {
+    // 1. Create a list to store processed data
+    List<ProcessedDataList> processedData = new ArrayList<>();
+
+    fileLists.fileLists().stream()
+        .filter(fileInfo -> !driveUtils.isMdFile(fileInfo.fileName())) // Filter out Markdown files
+        .forEach(fileInfo -> {
+      try {
+        // 2. Fetch existing record by imageId if it exists
+        Optional<TbAttachedImages> existingImage = pastedImageQRepository.findByImageId(fileInfo.id());
+
+        if (existingImage.isEmpty()) {
+          // 3. Insert new image
+          TbAttachedImages entity = new TbAttachedImages();
+          entity.setImageId(fileInfo.id());
+          entity.setImageName(fileInfo.fileName());
+          entity.setCreatedAt(fileInfo.createdAt());
+          pastedImageRepository.save(entity);
+
+          log.info("Inserted new image with ID: {} and Name: {}", entity.getImageId(), entity.getImageName());
+
+          // 4. Add to processed data list
+          processedData.add(new ProcessedDataList(entity.getImageId(), entity.getImageName()));
+        }
+      } catch (DataIntegrityViolationException | ConstraintViolationException e) {
+        log.error("Duplicate imageId encountered for image: {}", fileInfo.fileName());
+        throw new IllegalStateException("Error occurred while uploading images", e);
+      }
+    });
+
+    return processedData;
   }
 }
