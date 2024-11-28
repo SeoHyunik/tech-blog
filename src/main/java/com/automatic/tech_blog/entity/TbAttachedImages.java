@@ -3,7 +3,6 @@ package com.automatic.tech_blog.entity;
 import jakarta.persistence.*;
 import java.util.Date;
 import lombok.Data;
-import java.sql.Timestamp;
 
 @Entity
 @Table(name = "tb_attached_images")
@@ -27,4 +26,10 @@ public class TbAttachedImages {
 
   @Column(name = "uploaded_at", nullable = true)
   private Date uploadedAt;
+
+  @Column(name = "image_file_path", nullable = true)
+  private String imageFilePath;
+
+  @Column(name = "image_url", nullable = true)
+  private String imageUrl;
 }
