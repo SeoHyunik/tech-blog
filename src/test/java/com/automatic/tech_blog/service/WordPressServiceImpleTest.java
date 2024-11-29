@@ -80,9 +80,10 @@ class WordPressServiceImplTest {
 
       // Log processed data for debugging
       processedDataLists.forEach(data -> {
+        wordPressService.updateImageInfo(data.id(), data.name());
         assertNotNull(data.id(), "Processed data ID should not be null");
-        assertNotNull(data.name(), "Processed data name should not be null");
-        System.out.println("Processed Data -> ID: " + data.id() + ", Name: " + data.name());
+        assertNotNull(data.name(), "Processed data url should not be null");
+        System.out.println("Processed Data -> ID: " + data.id() + ", URL: " + data.name());
       });
     });
   }

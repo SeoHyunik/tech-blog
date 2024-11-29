@@ -7,9 +7,12 @@ import com.automatic.tech_blog.dto.service.FileLists;
 import com.automatic.tech_blog.dto.service.ImageInfo;
 import com.automatic.tech_blog.dto.service.ImageLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
+import com.automatic.tech_blog.entity.TbAttachedImages;
 import com.automatic.tech_blog.enums.ExternalUrls;
 import com.automatic.tech_blog.enums.SecuritySpecs;
 import com.automatic.tech_blog.enums.WpCategories;
+import com.automatic.tech_blog.repository.PastedImageRepository;
+import com.automatic.tech_blog.repository.q_repo.PastedImageQRepository;
 import com.automatic.tech_blog.utils.ExternalApiUtils;
 import com.automatic.tech_blog.utils.FileUtils;
 import com.automatic.tech_blog.utils.SecurityUtils;
@@ -18,7 +21,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.io.File;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +41,8 @@ import reactor.core.publisher.Mono;
 public class WordPressServiceImpl implements WordPressService{
   private final ExternalApiUtils apiUtils;
   private final WordPressUtils wordPressUtils;
+  private final PastedImageRepository imageRepository;
+  private final PastedImageQRepository imageQRepository;
 
   @Override
   public Flux<ProcessedDataList> postArticlesToBlog(FileLists fileLists) {
@@ -159,7 +166,7 @@ public class WordPressServiceImpl implements WordPressService{
         .switchIfEmpty(Mono.fromRunnable(() -> log.info("No images to upload")));
   }
 
-  public Mono<String> uploadImage(ImageInfo imageInfo, String token) {
+  private Mono<String> uploadImage(ImageInfo imageInfo, String token) {
     try {
       // 1. Read the image file
       String absolutePath = FileUtils.getAbsoluteFilePath(imageInfo.imageFilePath());
@@ -209,6 +216,19 @@ public class WordPressServiceImpl implements WordPressService{
     } catch (Exception e) {
       log.error("Error uploading image: {}", imageInfo.imageFilePath(), e);
       return Mono.error(new IllegalStateException("Failed to upload image", e));
+    }
+  }
+
+  @Override
+  public void updateImageInfo(String imageId, String imageUrl) {
+    Optional<TbAttachedImages> image = imageQRepository.findByImageId(imageId);
+    if (image.isPresent()) {
+      TbAttachedImages updatedImage = image.get();
+      updatedImage.setImageUrl(imageUrl);
+      updatedImage.setUploadedAt(new Date());
+      imageRepository.save(updatedImage);
+    } else {
+      log.warn("Image not found in the database: {}", imageId);
     }
   }
 
