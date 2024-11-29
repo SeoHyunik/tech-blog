@@ -8,6 +8,7 @@ import com.automatic.tech_blog.dto.service.FileInfo;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.enums.InternalPaths;
 import com.automatic.tech_blog.enums.SecuritySpecs;
+import com.automatic.tech_blog.repository.q_repo.PastedImageQRepository;
 import com.automatic.tech_blog.utils.FileUtils;
 import com.automatic.tech_blog.utils.GoogleDriveUtils;
 import com.automatic.tech_blog.utils.OpenAiUtils;
@@ -15,7 +16,10 @@ import com.automatic.tech_blog.utils.SecurityUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,6 +37,7 @@ import reactor.core.publisher.Mono;
 public class OpenAiServiceImpl implements OpenAiService {
   private final GoogleDriveUtils googleDriveUtils;
   private final OpenAiUtils openAiUtils;
+  private final PastedImageQRepository imageQRepository;
 
   @Override
   public Flux<ProcessedDataList> editTechNotes(EditTechNotesRequest request) {
@@ -52,12 +57,12 @@ public class OpenAiServiceImpl implements OpenAiService {
         .flatMap(driveService -> Mono.fromCallable(() ->
             googleDriveUtils.getFileContent(driveService, fileInfo.id(), googleAuthInfo)))
         .flatMap(fileContent -> fileContent != null
-            ? transformMarkdownToHtml(fileContent, fileInfo.fileName())
+            ? transformMarkdownToHtml(fileContent, fileInfo.id(), fileInfo.fileName())
             : Mono.fromRunnable(() -> log.info("File content is null for file ID: {}", fileInfo.id()))
         );
   }
 
-  private Mono<ProcessedDataList> transformMarkdownToHtml(String markdownContent, String fileName) {
+  private Mono<ProcessedDataList> transformMarkdownToHtml(String markdownContent, String fileId, String fileName) {
     return Mono.fromCallable(() -> {
       // 1. Load the editor roles JSON
       JsonObject roles = loadEditorRoles();
@@ -72,13 +77,44 @@ public class OpenAiServiceImpl implements OpenAiService {
       OpenAiRequest openAiRequest = new OpenAiRequest(prompt, apiKey);
       OpenAiResponse openAiResponse = openAiUtils.generateHtmlFromMarkdown(openAiRequest);
 
-      // 5. Save the HTML content to a local file
-      saveHtmlToLocal(openAiResponse.content(), fileName);
+      // 5. Edit image tags in the HTML content
+      String content = editImageTags(openAiResponse.content());
 
-      return new ProcessedDataList(fileName, openAiResponse.content());
+      // 6. Save the HTML content to a local file
+      saveHtmlToLocal(content, fileName);
+
+      return new ProcessedDataList(fileId, fileName);
     });
   }
 
+  private String editImageTags(String content) {
+    // 1. Use regex to find Markdown image tags: ![[image_name]]
+    Pattern pattern = Pattern.compile("!\\[\\[(.*?)]]");
+    Matcher matcher = pattern.matcher(content);
+
+    // 2. Create a StringBuilder for the resulting string
+    StringBuilder updatedContent = new StringBuilder();
+
+    while (matcher.find()) {
+      // 3. Extract the image name from the tag
+      String imageName = matcher.group(1);
+
+      // 4. Fetch the image URL from the database
+      String imageUrl = imageQRepository.findByImageName(imageName);
+
+      if (imageUrl != null) {
+        // 5.1 Replace the Markdown tag with the new one containing the image URL
+        String newMarkdownTag = "![[" + imageUrl + "]]";
+        matcher.appendReplacement(updatedContent, newMarkdownTag);
+      } else {
+        // 5.2 If the image URL is not found, keep the original tag
+        matcher.appendReplacement(updatedContent, matcher.group(0));
+      }
+    }
+    matcher.appendTail(updatedContent);
+
+    return updatedContent.toString();
+  }
 
   public String createPrompt(JsonObject roles, String markdownContent) {
     try {

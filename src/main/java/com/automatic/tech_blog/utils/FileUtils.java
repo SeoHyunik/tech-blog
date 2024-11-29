@@ -1,6 +1,7 @@
 package com.automatic.tech_blog.utils;
 
 import com.automatic.tech_blog.enums.InternalPaths;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -42,6 +43,24 @@ public class FileUtils {
       return new String(fileBytes, StandardCharsets.UTF_8);
     } catch (IOException e) {
       throw new IllegalStateException("Failed to read HTML file: " + fileName, e);
+    }
+  }
+
+  public static String getAbsoluteFilePath(String relativePath) {
+    try {
+      // 1. Get the user's home directory
+      String userHome = System.getProperty("user.home");
+
+      // 2. Locate the local Google Drive directory
+      File drivePath = new File(userHome, "내 드라이브");
+      if (!drivePath.exists() || !drivePath.isDirectory())
+        throw new IllegalStateException("Google Drive directory not found in user's home folder.");
+
+      // 3. Combine the local Google Drive path with the relative path
+      return new File(drivePath, relativePath.replaceFirst("^/내 드라이브", "")).getAbsolutePath();
+    } catch (Exception e) {
+      log.error("Error occurred while fetching absolute file path: {}", e.getMessage(), e);
+      throw new IllegalStateException("Error occurred while fetching absolute file path", e);
     }
   }
 }

@@ -162,10 +162,11 @@ public class WordPressServiceImpl implements WordPressService{
   public Mono<String> uploadImage(ImageInfo imageInfo, String token) {
     try {
       // 1. Read the image file
-      File file = new File(imageInfo.imageFilePath());
+      String absolutePath = FileUtils.getAbsoluteFilePath(imageInfo.imageFilePath());
+      File file = new File(absolutePath);
       if (!file.exists()) {
-        log.error("File not found: {}", imageInfo.imageFilePath());
-        return Mono.error(new IllegalStateException("File not found: " + imageInfo.imageFilePath()));
+        log.error("File not found: {}", absolutePath);
+        return Mono.error(new IllegalStateException("File not found: " + absolutePath));
       }
 
       // 2. Build HTTP headers

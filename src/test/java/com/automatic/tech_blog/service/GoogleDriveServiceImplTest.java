@@ -72,7 +72,7 @@ class GoogleDriveServiceImplTest {
     assertNotNull(result, "Upload result should not be null");
 
     // Act - Upload images to the database
-    List<ProcessedDataList> imgResult = googleService.uploadPastedImages(fileLists);
+    List<ProcessedDataList> imgResult = googleService.uploadPastedImages(authInfo, fileLists);
     System.out.println("Upload Result: " + imgResult);
   }
   @Test

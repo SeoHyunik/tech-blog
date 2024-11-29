@@ -1,6 +1,7 @@
 package com.automatic.tech_blog.service;
 
 import com.automatic.tech_blog.dto.service.FileLists;
+import com.automatic.tech_blog.dto.service.ImageLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.utils.GoogleDriveUtils;
 import java.util.List;
@@ -48,6 +49,36 @@ class WordPressServiceImplTest {
       assertNotNull(processedDataLists, "Processed data list should not be null");
       assertFalse(processedDataLists.isEmpty(), "Processed data list should not be empty");
 
+      processedDataLists.forEach(data -> {
+        assertNotNull(data.id(), "Processed data ID should not be null");
+        assertNotNull(data.name(), "Processed data name should not be null");
+        System.out.println("Processed Data -> ID: " + data.id() + ", Name: " + data.name());
+      });
+    });
+  }
+
+  @Test
+  void testUploadImagesToWordPress() {
+    // Step 1: Prepare test image data
+    ImageLists imageLists = googleService.getNewImages();
+
+    // Log input data for debugging
+    imageLists.imageLists().forEach(imageInfo -> {
+      System.out.println("Image ID: " + imageInfo.id() + ", Name: " + imageInfo.imageName());
+    });
+
+    // Step 2: Call the uploadImages method
+    Flux<ProcessedDataList> processedDataFlux = wordPressService.uploadImages(imageLists);
+
+    // Step 3: Verify and debug using Mono
+    Mono<List<ProcessedDataList>> processedDataListMono = processedDataFlux.collectList();
+
+    processedDataListMono.blockOptional().ifPresent(processedDataLists -> {
+      // Verify processed data list is not null or empty
+      assertNotNull(processedDataLists, "Processed data list should not be null");
+      assertFalse(processedDataLists.isEmpty(), "Processed data list should not be empty");
+
+      // Log processed data for debugging
       processedDataLists.forEach(data -> {
         assertNotNull(data.id(), "Processed data ID should not be null");
         assertNotNull(data.name(), "Processed data name should not be null");

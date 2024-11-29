@@ -61,6 +61,51 @@ public class GoogleDriveUtils {
         : null;
   }
 
+  public String findFilePathById(Drive driveService, String fileId) throws IOException {
+    // Initialize a StringBuilder to construct the file path
+    StringBuilder filePath = new StringBuilder();
+
+    // Start with the current file's metadata
+    String currentFileId = fileId;
+
+    while (currentFileId != null) {
+      // Fetch the file metadata, including its name and parent ID(s)
+      com.google.api.services.drive.model.File file = driveService.files().get(currentFileId)
+          .setFields("id, name, parents")
+          .execute();
+
+      // Prepend the current file/folder name to the path
+      filePath.insert(0, "/" + file.getName());
+
+      // Get the parent ID to continue traversing up the hierarchy
+      List<String> parents = file.getParents();
+
+      // If no parents exist, we've reached the root
+      currentFileId = (parents != null && !parents.isEmpty()) ? parents.get(0) : null;
+    }
+
+    return filePath.toString();
+  }
+
+  public static String getGoogleDrivePath() {
+    // Get the user's home directory
+    String userHome = System.getProperty("user.home");
+
+    // Check common directory names for Google Drive
+    String[] possibleDirs = {
+        "내 드라이브"       // Legacy English
+    };
+
+    for (String dir : possibleDirs) {
+      java.io.File drivePath = new java.io.File(userHome, dir);
+      if (drivePath.exists() && drivePath.isDirectory()) {
+        return drivePath.getAbsolutePath();
+      }
+    }
+    throw new IllegalStateException("Google Drive directory not found on this computer");
+  }
+
+
   public void findMdFilesInDirectory(
       Drive driveService, String directoryId, List<FileInfo> fileInfos, String parentFolderName) throws IOException {
 
