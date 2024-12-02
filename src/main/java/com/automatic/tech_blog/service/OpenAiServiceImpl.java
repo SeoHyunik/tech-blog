@@ -9,6 +9,7 @@ import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.enums.InternalPaths;
 import com.automatic.tech_blog.enums.SecuritySpecs;
 import com.automatic.tech_blog.repository.q_repo.PastedImageQRepository;
+import com.automatic.tech_blog.utils.ArticleUtils;
 import com.automatic.tech_blog.utils.FileUtils;
 import com.automatic.tech_blog.utils.GoogleDriveUtils;
 import com.automatic.tech_blog.utils.OpenAiUtils;
@@ -16,7 +17,6 @@ import com.automatic.tech_blog.utils.SecurityUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,6 +37,7 @@ import reactor.core.publisher.Mono;
 public class OpenAiServiceImpl implements OpenAiService {
   private final GoogleDriveUtils googleDriveUtils;
   private final OpenAiUtils openAiUtils;
+  private final ArticleUtils articleUtils;
   private final PastedImageQRepository imageQRepository;
 
   @Override
@@ -76,60 +77,22 @@ public class OpenAiServiceImpl implements OpenAiService {
       // 4. Generate HTML content from the markdown
       OpenAiRequest openAiRequest = new OpenAiRequest(prompt, apiKey);
       OpenAiResponse openAiResponse = openAiUtils.generateHtmlFromMarkdown(openAiRequest);
+      String content = openAiResponse.content();
 
       // 5. Edit image tags in the HTML content
-      String content = editImageTags(openAiResponse.content());
+      content = articleUtils.editImageTags(content);
 
-      // 6. Save the HTML content to a local file
+      // 6. Edit link tags in the HTML content
+      content = articleUtils.editLinkTags(content);
+
+      // 7. Save the HTML content to a local file
       saveHtmlToLocal(content, fileName);
 
       return new ProcessedDataList(fileId, fileName);
     });
   }
 
-  private String editImageTags(String content) {
-    log.info("Start editImageTags");
-
-    // 1. 정규식을 사용해 HTML의 <img> 태그를 찾기
-    Pattern pattern = Pattern.compile("<img\\s+[^>]*src=[\"']([^\"']+)[\"'][^>]*>");
-    Matcher matcher = pattern.matcher(content);
-
-    // 2. 결과를 저장할 StringBuilder 생성
-    StringBuilder updatedContent = new StringBuilder();
-
-    // 3. Matcher를 순회하며 태그를 처리
-    while (matcher.find()) {
-      String matchedTag = matcher.group(0); // 전체 매칭된 태그
-      String imageSrc = matcher.group(1); // src 속성 값 (이미지 경로)
-
-      log.info("Matched tag: {}, Extracted src: {}", matchedTag, imageSrc);
-
-      // 4. 데이터베이스에서 새로운 이미지 URL을 검색
-      String imageUrl = imageQRepository.findByImageName(imageSrc);
-
-      if (imageUrl != null) {
-        // 5.1 이미지 URL이 존재하면 src를 교체
-        String newImgTag = matchedTag.replace(imageSrc, imageUrl);
-        log.info("Image URL found. Replacing src with: {}", imageUrl);
-        matcher.appendReplacement(updatedContent, Matcher.quoteReplacement(newImgTag));
-      } else {
-        // 5.2 이미지 URL이 없으면 원본 태그를 유지
-        log.warn("Image URL not found for: {}. Keeping original tag.", imageSrc);
-        matcher.appendReplacement(updatedContent, Matcher.quoteReplacement(matchedTag));
-      }
-    }
-
-    // 6. Tail 처리 (남은 문자열 추가)
-    matcher.appendTail(updatedContent);
-
-    log.info("Finished editing image tags.{}", updatedContent);
-
-    return updatedContent.toString();
-  }
-
-
-
-  public String createPrompt(JsonObject roles, String markdownContent) {
+  private String createPrompt(JsonObject roles, String markdownContent) {
     try {
       // 1. Get the messages array from roles
       JsonArray messages = roles.getAsJsonArray("messages");
