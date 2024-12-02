@@ -88,33 +88,46 @@ public class OpenAiServiceImpl implements OpenAiService {
   }
 
   private String editImageTags(String content) {
-    // 1. Use regex to find Markdown image tags: ![[image_name]]
-    Pattern pattern = Pattern.compile("!\\[\\[(.*?)]]");
+    log.info("Start editImageTags");
+
+    // 1. 정규식을 사용해 HTML의 <img> 태그를 찾기
+    Pattern pattern = Pattern.compile("<img\\s+[^>]*src=[\"']([^\"']+)[\"'][^>]*>");
     Matcher matcher = pattern.matcher(content);
 
-    // 2. Create a StringBuilder for the resulting string
+    // 2. 결과를 저장할 StringBuilder 생성
     StringBuilder updatedContent = new StringBuilder();
 
+    // 3. Matcher를 순회하며 태그를 처리
     while (matcher.find()) {
-      // 3. Extract the image name from the tag
-      String imageName = matcher.group(1);
+      String matchedTag = matcher.group(0); // 전체 매칭된 태그
+      String imageSrc = matcher.group(1); // src 속성 값 (이미지 경로)
 
-      // 4. Fetch the image URL from the database
-      String imageUrl = imageQRepository.findByImageName(imageName);
+      log.info("Matched tag: {}, Extracted src: {}", matchedTag, imageSrc);
+
+      // 4. 데이터베이스에서 새로운 이미지 URL을 검색
+      String imageUrl = imageQRepository.findByImageName(imageSrc);
 
       if (imageUrl != null) {
-        // 5.1 Replace the Markdown tag with the new one containing the image URL
-        String newMarkdownTag = "![[" + imageUrl + "]]";
-        matcher.appendReplacement(updatedContent, newMarkdownTag);
+        // 5.1 이미지 URL이 존재하면 src를 교체
+        String newImgTag = matchedTag.replace(imageSrc, imageUrl);
+        log.info("Image URL found. Replacing src with: {}", imageUrl);
+        matcher.appendReplacement(updatedContent, Matcher.quoteReplacement(newImgTag));
       } else {
-        // 5.2 If the image URL is not found, keep the original tag
-        matcher.appendReplacement(updatedContent, matcher.group(0));
+        // 5.2 이미지 URL이 없으면 원본 태그를 유지
+        log.warn("Image URL not found for: {}. Keeping original tag.", imageSrc);
+        matcher.appendReplacement(updatedContent, Matcher.quoteReplacement(matchedTag));
       }
     }
+
+    // 6. Tail 처리 (남은 문자열 추가)
     matcher.appendTail(updatedContent);
+
+    log.info("Finished editing image tags.{}", updatedContent);
 
     return updatedContent.toString();
   }
+
+
 
   public String createPrompt(JsonObject roles, String markdownContent) {
     try {
