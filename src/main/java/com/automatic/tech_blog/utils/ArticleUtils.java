@@ -5,6 +5,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -82,5 +86,44 @@ public class ArticleUtils {
     matcher.appendTail(updatedContent);
     log.info("Finished editing link tags.{}", updatedContent);
     return updatedContent.toString();
+  }
+
+  public String editHtmlStructure(String content) {
+    // 1. Remove the opening ```html
+    content = content.replaceFirst("^```html\\s*", "");
+
+    // 2. Remove the closing ```
+    content = content.replaceFirst("\\s*```$", "");
+
+    // 3. Parse HTML content into a document object
+    Document document = Jsoup.parse(content);
+
+    // 4. Process tables
+    for (Element table : document.select("table")) {
+      // 4-1. Set table styles
+      table.attr("style", "background-color: #f2f2ea; border-collapse: collapse; border: 1px solid #041979; border-radius: 5px;");
+
+      // 4-2. Process rows
+      Elements rows = table.select("tr");
+      for (int i = 0; i < rows.size(); i++) {
+        Element row = rows.get(i);
+
+        // Apply different styles for the first row
+        if (i == 0) {
+          for (Element cell : row.select("th, td")) {
+            cell.attr("style", "border: 1px solid #041979; padding: 8px; white-space: nowrap; font-weight: bold;");
+          }
+        } else {
+          // Default styles for other rows
+          row.attr("style", "border: 1px solid #041979;");
+          for (Element cell : row.select("th, td")) {
+            cell.attr("style", "border: 1px solid #041979; padding: 8px;");
+          }
+        }
+      }
+    }
+
+    // 5. Return the updated HTML content as a string
+    return document.html();
   }
 }

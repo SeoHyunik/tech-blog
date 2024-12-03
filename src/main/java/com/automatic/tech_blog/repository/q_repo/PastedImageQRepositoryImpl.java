@@ -4,7 +4,6 @@ import com.automatic.tech_blog.dto.service.ImageInfo;
 import com.automatic.tech_blog.dto.service.ImageLists;
 import com.automatic.tech_blog.entity.QTbAttachedImages;
 import com.automatic.tech_blog.entity.TbAttachedImages;
-import com.querydsl.core.QueryFactory;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.Date;
@@ -51,7 +50,7 @@ public class PastedImageQRepositoryImpl implements PastedImageQRepository {
             tbAttachedImages.imageFilePath
         ))
         .from(tbAttachedImages)
-        .where(tbAttachedImages.createdAt.goe(since))
+        .where(tbAttachedImages.createdAt.goe(since), tbAttachedImages.uploadedAt.isNull())
         .fetch();
 
     // Wrap the result in an ImageLists record and return it as Optional

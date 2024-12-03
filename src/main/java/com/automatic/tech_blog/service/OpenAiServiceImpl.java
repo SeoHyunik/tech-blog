@@ -85,7 +85,10 @@ public class OpenAiServiceImpl implements OpenAiService {
       // 6. Edit link tags in the HTML content
       content = articleUtils.editLinkTags(content);
 
-      // 7. Save the HTML content to a local file
+      // 7. Edit overall HTML structure
+      content = articleUtils.editHtmlStructure(content);
+
+      // 8. Save the HTML content to a local file
       saveHtmlToLocal(content, fileName);
 
       return new ProcessedDataList(fileId, fileName);
