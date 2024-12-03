@@ -122,7 +122,6 @@ public class ArticleUtils {
         }
       }
     }
-
     // 5. Return the updated HTML content as a string
     return document.html();
   }

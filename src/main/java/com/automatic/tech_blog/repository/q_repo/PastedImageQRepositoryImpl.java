@@ -41,7 +41,6 @@ public class PastedImageQRepositoryImpl implements PastedImageQRepository {
   public Optional<ImageLists> findNewImages(Date since) {
     QTbAttachedImages tbAttachedImages = QTbAttachedImages.tbAttachedImages;
 
-    // Fetch the list of ImageInfo using QueryDSL
     List<ImageInfo> imageInfoList = queryFactory
         .select(Projections.constructor(
             ImageInfo.class,
@@ -53,7 +52,6 @@ public class PastedImageQRepositoryImpl implements PastedImageQRepository {
         .where(tbAttachedImages.createdAt.goe(since), tbAttachedImages.uploadedAt.isNull())
         .fetch();
 
-    // Wrap the result in an ImageLists record and return it as Optional
     return imageInfoList.isEmpty()
         ? Optional.empty()
         : Optional.of(new ImageLists(imageInfoList));

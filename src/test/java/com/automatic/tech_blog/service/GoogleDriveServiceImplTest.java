@@ -109,6 +109,4 @@ class GoogleDriveServiceImplTest {
           ", ID: " + data.id());
     });
   }
-
-
 }
