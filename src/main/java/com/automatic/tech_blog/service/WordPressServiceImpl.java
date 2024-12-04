@@ -8,10 +8,13 @@ import com.automatic.tech_blog.dto.service.ImageInfo;
 import com.automatic.tech_blog.dto.service.ImageLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.entity.TbAttachedImages;
+import com.automatic.tech_blog.entity.TbPostsInfo;
 import com.automatic.tech_blog.enums.ExternalUrls;
 import com.automatic.tech_blog.enums.SecuritySpecs;
 import com.automatic.tech_blog.enums.WpCategories;
 import com.automatic.tech_blog.repository.PastedImageRepository;
+import com.automatic.tech_blog.repository.PostedArticleRepository;
+import com.automatic.tech_blog.repository.q_repo.MdFileQRepository;
 import com.automatic.tech_blog.repository.q_repo.PastedImageQRepository;
 import com.automatic.tech_blog.utils.ExternalApiUtils;
 import com.automatic.tech_blog.utils.FileUtils;
@@ -43,6 +46,8 @@ public class WordPressServiceImpl implements WordPressService{
   private final WordPressUtils wordPressUtils;
   private final PastedImageRepository imageRepository;
   private final PastedImageQRepository imageQRepository;
+  private final MdFileQRepository mdFileQRepository;
+  private final PostedArticleRepository postedArticleRepository;
 
   @Override
   public Flux<ProcessedDataList> postArticlesToBlog(FileLists fileLists) {
@@ -119,14 +124,32 @@ public class WordPressServiceImpl implements WordPressService{
             // 5. Parse the response
             JsonObject jsonResponse = JsonParser.parseString(response.getBody()).getAsJsonObject();
             String id = jsonResponse.get("id").getAsString();
-            String name = jsonResponse.get("slug").getAsString();
-            log.info("Parsed Response -> ID: {}, Name: {}", id, name);
-            return Mono.just(new ProcessedDataList(id, name));
+            String slug = jsonResponse.get("slug").getAsString();
+            String fileName = fileInfo.fileName();
+            log.info("Parsed Response -> ID: {}, Slug: {}, FileName: {}", id, slug, fileName);
+
+            // 6. Insert the posted article's info in to database
+            updatePostsInfo(fileName, id);
+
+            return Mono.just(new ProcessedDataList(id, slug));
           } catch (Exception e) {
             log.error("Error parsing response for file ID: {}", fileInfo.id(), e);
             return Mono.error(new IllegalStateException("Failed to process response"));
           }
         });
+  }
+
+  private void updatePostsInfo(String fileName, String id) {
+    String title = fileName.replace(".md", "");
+    String fileId = mdFileQRepository.findFileIdByFileName(fileName);
+
+    TbPostsInfo postsInfo = new TbPostsInfo();
+    postsInfo.setTitle(title);
+    postsInfo.setContentId(Integer.parseInt(id));
+    postsInfo.setFileId(fileId);
+    postsInfo.setPublishedAt(new Date());
+    postsInfo.setStatus("published");
+    postedArticleRepository.save(postsInfo);
   }
 
 

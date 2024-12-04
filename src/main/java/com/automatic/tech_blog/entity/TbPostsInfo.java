@@ -3,7 +3,7 @@ package com.automatic.tech_blog.entity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.sql.Timestamp;
+import java.util.Date;
 import lombok.Data;
 
 @Entity
@@ -13,8 +13,8 @@ public class TbPostsInfo {
   @Id
   private int id;
   private String title;
-  private int content_id;
-  private String file_id;
-  private Timestamp publishedAt;
+  private int contentId;
+  private String fileId;
+  private Date publishedAt;
   private String status;
 }

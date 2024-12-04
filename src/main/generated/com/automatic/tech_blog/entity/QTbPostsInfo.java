@@ -19,13 +19,13 @@ public class QTbPostsInfo extends EntityPathBase<TbPostsInfo> {
 
     public static final QTbPostsInfo tbPostsInfo = new QTbPostsInfo("tbPostsInfo");
 
-    public final NumberPath<Integer> content_id = createNumber("content_id", Integer.class);
+    public final NumberPath<Integer> contentId = createNumber("contentId", Integer.class);
 
-    public final StringPath file_id = createString("file_id");
+    public final StringPath fileId = createString("fileId");
 
     public final NumberPath<Integer> id = createNumber("id", Integer.class);
 
-    public final DateTimePath<java.sql.Timestamp> publishedAt = createDateTime("publishedAt", java.sql.Timestamp.class);
+    public final DateTimePath<java.util.Date> publishedAt = createDateTime("publishedAt", java.util.Date.class);
 
     public final StringPath status = createString("status");
 

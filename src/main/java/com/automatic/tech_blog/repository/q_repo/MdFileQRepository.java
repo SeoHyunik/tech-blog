@@ -11,4 +11,5 @@ import org.springframework.stereotype.Repository;
 public interface MdFileQRepository {
   Optional<TbMdFiles> findByFileId(String fileId);
   List<FileInfo> findNewFiles(Date since);
+  String findFileIdByFileName(String fileName);
 }

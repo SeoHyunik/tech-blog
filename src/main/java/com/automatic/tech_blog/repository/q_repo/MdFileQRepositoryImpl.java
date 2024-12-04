@@ -45,4 +45,14 @@ public class MdFileQRepositoryImpl implements MdFileQRepository {
         .where(tbMdFiles.createdAt.goe(since).or(tbMdFiles.modifiedAt.goe(since)))
         .fetch();
   }
+
+  @Override
+  public String findFileIdByFileName(String fileName) {
+    QTbMdFiles tbMdFiles = QTbMdFiles.tbMdFiles;
+
+    return queryFactory.select(tbMdFiles.fileId)
+        .from(tbMdFiles)
+        .where(tbMdFiles.fileName.eq(fileName))
+        .fetchOne();
+  }
 }
