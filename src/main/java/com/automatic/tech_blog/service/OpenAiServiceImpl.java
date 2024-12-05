@@ -91,6 +91,9 @@ public class OpenAiServiceImpl implements OpenAiService {
       // 8. Save the HTML content to a local file
       saveHtmlToLocal(content, fileName);
 
+      // 9. Save token usage to the database
+      // TODO : token usage util 만들고 usage -> USD -> KRW 환산하여 DB 저장 로직 추가 + fileId
+
       return new ProcessedDataList(fileId, fileName);
     });
   }
