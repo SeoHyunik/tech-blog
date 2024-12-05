@@ -53,6 +53,9 @@ public class OpenAiUtils {
       int tokenUsage = jsonObject.has("usage")
           ? jsonObject.getAsJsonObject("usage").get("total_tokens").getAsInt()
           : 0;
+      // TODO : total usage로 하면 안되고 input, output 따로 해서 반환해야 함
+      // input : promt_tokens
+      // output : completion_tokens
 
       return new OpenAiResponse(content, tokenUsage);
     } catch (JsonParseException e) {
