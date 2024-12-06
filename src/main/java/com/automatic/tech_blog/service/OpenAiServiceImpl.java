@@ -6,20 +6,21 @@ import com.automatic.tech_blog.dto.request.OpenAiRequest;
 import com.automatic.tech_blog.dto.response.OpenAiResponse;
 import com.automatic.tech_blog.dto.service.FileInfo;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
+import com.automatic.tech_blog.dto.service.TokenUsageInfo;
+import com.automatic.tech_blog.entity.TbTokenUsage;
 import com.automatic.tech_blog.enums.InternalPaths;
 import com.automatic.tech_blog.enums.SecuritySpecs;
-import com.automatic.tech_blog.repository.q_repo.PastedImageQRepository;
+import com.automatic.tech_blog.repository.TokenUsageRepository;
 import com.automatic.tech_blog.utils.ArticleUtils;
 import com.automatic.tech_blog.utils.FileUtils;
 import com.automatic.tech_blog.utils.GoogleDriveUtils;
 import com.automatic.tech_blog.utils.OpenAiUtils;
 import com.automatic.tech_blog.utils.SecurityUtils;
+import com.automatic.tech_blog.utils.TokenUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,7 +39,8 @@ public class OpenAiServiceImpl implements OpenAiService {
   private final GoogleDriveUtils googleDriveUtils;
   private final OpenAiUtils openAiUtils;
   private final ArticleUtils articleUtils;
-  private final PastedImageQRepository imageQRepository;
+  private final TokenUtils tokenUtils;
+  private final TokenUsageRepository tokenUsageRepository;
 
   @Override
   public Flux<ProcessedDataList> editTechNotes(EditTechNotesRequest request) {
@@ -92,10 +94,20 @@ public class OpenAiServiceImpl implements OpenAiService {
       saveHtmlToLocal(content, fileName);
 
       // 9. Save token usage to the database
-      // TODO : token usage util 만들고 usage -> USD -> KRW 환산하여 DB 저장 로직 추가 + fileId
+      insertTokenUsage(tokenUtils.getTokenUsageInfo(openAiResponse, fileId));
 
       return new ProcessedDataList(fileId, fileName);
     });
+  }
+
+  private void insertTokenUsage(TokenUsageInfo tokenUsageInfo) {
+    TbTokenUsage tbTokenUsage = new TbTokenUsage();
+    tbTokenUsage.setFileId(tokenUsageInfo.fileId());
+    tbTokenUsage.setInputTokens(tokenUsageInfo.inputTokens());
+    tbTokenUsage.setOutputTokens(tokenUsageInfo.outputTokens());
+    tbTokenUsage.setConvertedKrw(tokenUsageInfo.convertedKrw());
+    tbTokenUsage.setModel(tokenUsageInfo.model());
+    tokenUsageRepository.save(tbTokenUsage);
   }
 
   private String createPrompt(JsonObject roles, String markdownContent) {

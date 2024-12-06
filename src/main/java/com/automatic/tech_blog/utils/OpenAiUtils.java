@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @RequiredArgsConstructor
 public class OpenAiUtils {
+  private int totalInputTokens;
+  private int totalOutputTokens;
 
   private final ExternalApiUtils apiUtils;
 
@@ -38,26 +40,30 @@ public class OpenAiUtils {
       JsonObject jsonObject = JsonParser.parseString(response.getBody()).getAsJsonObject();
 
       // 5. Extract relevant fields
-      String id = jsonObject.has("id") ? jsonObject.get("id").getAsString() : null;
-
       JsonArray choices = jsonObject.getAsJsonArray("choices");
       if (choices == null || choices.size() == 0)
         throw new IllegalStateException("API response does not contain choices.");
 
-      String content = choices
-          .get(0)
-          .getAsJsonObject()
-          .getAsJsonObject("message")
-          .get("content")
-          .getAsString();
-      int tokenUsage = jsonObject.has("usage")
-          ? jsonObject.getAsJsonObject("usage").get("total_tokens").getAsInt()
-          : 0;
-      // TODO : total usage로 하면 안되고 input, output 따로 해서 반환해야 함
-      // input : promt_tokens
-      // output : completion_tokens
+      // 5-1. Extract the content from the first choice
+      String content = choices.get(0).getAsJsonObject().getAsJsonObject("message").get("content").getAsString();
 
-      return new OpenAiResponse(content, tokenUsage);
+      // 5-2. Extract model information
+      String model = jsonObject.get("model").getAsString();
+
+      // 5-3. Extract usage information
+      totalInputTokens += jsonObject.getAsJsonObject("usage").get("prompt_tokens").getAsInt();
+      totalOutputTokens += jsonObject.getAsJsonObject("usage").get("completion_tokens").getAsInt();
+
+      // 6. Check if finish_reason is not "stop"
+      String finishReason = choices.get(0).getAsJsonObject().get("finish_reason").getAsString();
+      if (!"stop".equals(finishReason)) {
+        log.warn("Finish_reason is not 'stop'. Retrying...");
+        return generateHtmlFromMarkdown(openAiRequest);  // Recursively retry
+      }
+
+      // 7. Return the OpenAiResponse with the collected data
+      return new OpenAiResponse(content, model, totalInputTokens, totalOutputTokens);
+
     } catch (JsonParseException e) {
       log.error("Error parsing JSON response: {}", e.getMessage(), e);
       throw new IllegalStateException("Failed to parse API response JSON", e);
@@ -66,6 +72,7 @@ public class OpenAiUtils {
       throw new IllegalStateException("Failed to generate HTML from Markdown", e);
     }
   }
+
 
   private ExternalApiRequest buildApiRequest(OpenAiRequest openAiRequest) {
     // 1. Set HTTP headers
