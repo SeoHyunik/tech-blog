@@ -127,26 +127,14 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
 
   @Override
   public FileLists getNewFiles() {
-    // 1. Calculate the timestamp for 24 hours ago
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.HOUR, -24);
-    Date since = calendar.getTime();
-
-    // 2. Fetch new files from the database using Query DSL
-    List<FileInfo> fileInfos = mdFileQRepository.findNewFiles(since);
-
-    return new FileLists(fileInfos);
+    // 1. Fetch new files from the database using Query DSL
+    return new FileLists(mdFileQRepository.findNewFiles(get24HoursAgo()));
   }
 
   @Override
   public ImageLists getNewImages() {
-    // 1. Calculate the timestamp for 24 hours ago
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.HOUR, -24);
-    Date since = calendar.getTime();
-
-    // 2. Fetch new images from the database using Query DSL
-    return pastedImageQRepository.findNewImages(since).orElse(new ImageLists(new ArrayList<>()));
+    // 1. Fetch new images from the database using Query DSL
+    return pastedImageQRepository.findNewImages(get24HoursAgo()).orElse(new ImageLists(new ArrayList<>()));
   }
 
   @Override
@@ -198,6 +186,12 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
       log.error("Error occurred while fetching file path from Google Drive for image: {}", fileInfo.fileName(), e);
       throw new RuntimeException(e);
     }
+  }
+
+  private Date get24HoursAgo() {
+    Calendar calendar = Calendar.getInstance();
+    calendar.add(Calendar.HOUR, -24);
+    return calendar.getTime();
   }
 
 }
