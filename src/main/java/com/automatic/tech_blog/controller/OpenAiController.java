@@ -22,6 +22,7 @@ import reactor.core.publisher.Mono;
 public class OpenAiController {
   private final OpenAiService openAiService;
 
+  /*TODO : Edit tech-notes by Open AI API with proper prompt and rules*/
   @PostMapping("/edit-tech-notes")
   @ResponseStatus(HttpStatus.CREATED)
   public Mono<ApiResponse> editTechNotes(@RequestBody @Valid EditTechNotesRequest request) {

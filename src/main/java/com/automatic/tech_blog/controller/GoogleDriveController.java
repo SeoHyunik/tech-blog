@@ -52,4 +52,26 @@ public class GoogleDriveController {
             new Date(),
             true);
     }
+
+    /*TODO : Return image lists that is pasted on the notes*/
+    @GetMapping("/new-images")
+    @ResponseStatus(HttpStatus.OK)
+    public ApiResponse getNewImages() {
+        return new ApiResponse(
+            HttpStatus.OK.value(),
+            googleDriveService.getNewImages(),
+            new Date(),
+            true);
+    }
+
+    /*TODO : Upload pasted images into DB*/
+    @PostMapping("/upload-pasted-images")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse uploadPastedImages(@RequestBody @Valid GoogleAuthInfo authInfo, @RequestBody @Valid FileLists fileLists) {
+        return new ApiResponse(
+            HttpStatus.CREATED.value(),
+            googleDriveService.uploadPastedImages(authInfo, fileLists),
+            new Date(),
+            true);
+    }
 }
