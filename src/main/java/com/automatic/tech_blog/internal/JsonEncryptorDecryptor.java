@@ -114,7 +114,7 @@ public class JsonEncryptorDecryptor {
     if (!directory.exists()) {
       directory.mkdirs();
     }
-    File file = new File(directory, "kiwijam_pw.txt");
+    File file = new File(directory, "exchange_rate_api_key.txt");
     try (FileOutputStream fos = new FileOutputStream(file)) {
       fos.write(encryptedJson.getBytes());
     }

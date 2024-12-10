@@ -8,7 +8,7 @@ public enum ExternalUrls {
   OPEN_AI_COMPLETION_URI("https://api.openai.com/v1/chat/completions"),
   WORD_PRESS_KIWIJAM_V1("https://kiwijam.kr/wp-json/api/v1"),
   WORD_PRESS_KIWIJAM_V2("https://kiwijam.kr/wp-json/wp/v2"),
-  EXCHANGE_RATE_URI("https://v6.exchangerate-api.com/v6/b459b3ea4a98482e611335ce/latest/USD");
+  EXCHANGE_RATE_URI("https://v6.exchangerate-api.com/v6/{API_KEY}/latest/USD");
 
   private final String url;
 
