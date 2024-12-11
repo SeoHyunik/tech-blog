@@ -153,7 +153,6 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
           .forEach(fileInfo -> processFile(driveService, fileInfo, processedData));
 
       return processedData;
-
     } catch (Exception e) {
       log.error("Error occurred while processing files: {}", e.getMessage(), e);
       throw new IllegalStateException("An error occurred while uploading pasted images", e);
