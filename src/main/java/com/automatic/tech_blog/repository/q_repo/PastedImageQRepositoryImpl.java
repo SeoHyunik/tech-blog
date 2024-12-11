@@ -56,5 +56,4 @@ public class PastedImageQRepositoryImpl implements PastedImageQRepository {
         ? Optional.empty()
         : Optional.of(new ImageLists(imageInfoList));
   }
-
 }

@@ -38,7 +38,6 @@ import java.util.Map;
 @Service
 @Slf4j
 public class GoogleAuthUtils {
-
   public GoogleCredentials getGoogleCredentials(GoogleAuthInfo authInfo) {
     try {
       // 1. Decrypt credentials to obtain OAuthCredentials

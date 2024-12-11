@@ -12,7 +12,6 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 
 @Configuration
 public class OAuth2ClientConfig {
-
   @Bean
   public ClientRegistrationRepository clientRegistrationRepository() {
     return new InMemoryClientRegistrationRepository(googleClientRegistration());

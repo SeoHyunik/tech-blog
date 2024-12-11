@@ -9,7 +9,6 @@ import lombok.Data;
 @Table(name = "tb_md_files")
 @Data
 public class TbMdFiles {
-
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private int id;

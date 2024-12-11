@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 public class OpenAiUtils {
   private int totalInputTokens;
   private int totalOutputTokens;
-
   private final ExternalApiUtils apiUtils;
 
   public OpenAiResponse generateHtmlFromMarkdown(OpenAiRequest openAiRequest) {

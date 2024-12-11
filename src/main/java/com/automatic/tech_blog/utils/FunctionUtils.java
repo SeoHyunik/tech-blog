@@ -11,7 +11,6 @@ import java.util.Date;
 @Service
 @Slf4j
 public class FunctionUtils {
-
   private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
   public static Date convertGoogleDateTimeToDate(DateTime googleDateTime) {

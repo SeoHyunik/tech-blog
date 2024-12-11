@@ -16,8 +16,6 @@ import java.util.Date;
 @ControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
-
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
         log.error(getLimitedStackTrace(ex));

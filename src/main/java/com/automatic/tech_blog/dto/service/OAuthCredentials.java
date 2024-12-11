@@ -2,9 +2,7 @@ package com.automatic.tech_blog.dto.service;
 
 import java.util.List;
 
-public record OAuthCredentials(
-    Web web
-) {
+public record OAuthCredentials(Web web) {
   public record Web(
       String client_id,
       String project_id,

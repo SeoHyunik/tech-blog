@@ -8,7 +8,6 @@ import lombok.Data;
 @Table(name = "tb_token_usage")
 @Data
 public class TbTokenUsage {
-
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private int id;

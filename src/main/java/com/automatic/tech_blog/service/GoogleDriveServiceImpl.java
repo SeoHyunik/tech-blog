@@ -3,7 +3,6 @@ package com.automatic.tech_blog.service;
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
 import com.automatic.tech_blog.dto.service.FileInfo;
 import com.automatic.tech_blog.dto.service.FileLists;
-import com.automatic.tech_blog.dto.service.ImageInfo;
 import com.automatic.tech_blog.dto.service.ImageLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.entity.TbAttachedImages;
