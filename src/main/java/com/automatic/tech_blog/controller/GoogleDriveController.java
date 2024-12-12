@@ -4,6 +4,11 @@ import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
 import com.automatic.tech_blog.dto.response.ApiResponse;
 import com.automatic.tech_blog.dto.service.FileLists;
 import com.automatic.tech_blog.service.GoogleDriveService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,12 +41,39 @@ public class GoogleDriveController {
     /*TODO : Upload file infos into DB*/
     @PostMapping("/upload-files")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse uploadFiles(@RequestBody @Valid FileLists fileLists) {
+    public ApiResponse uploadFiles(@RequestBody String rawRequestBody) {
+        log.info("Raw JSON Request Body: {}", rawRequestBody);
+
+        // ObjectMapper 초기화
+        ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule()) // Java 8+ 시간 API 지원
+            .registerModule(new ParameterNamesModule()) // Record 지원
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // 날짜를 ISO-8601로 출력
+
+        FileLists fileLists;
+        try {
+            // JSON 데이터를 FileLists 타입으로 변환
+            fileLists = objectMapper.readValue(rawRequestBody, FileLists.class);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to convert JSON to FileLists: {}", rawRequestBody, e);
+            throw new RuntimeException("Invalid JSON format", e);
+        }
+
+        log.info("Converted FileLists: {}", fileLists);
+
+        // googleDriveService 호출
+        Object uploadResult = googleDriveService.uploadFiles(fileLists);
+
+        if (uploadResult == null) {
+            throw new RuntimeException("Failed to upload files");
+        }
+
         return new ApiResponse(
             HttpStatus.CREATED.value(),
-            googleDriveService.uploadFiles(fileLists),
+            uploadResult,
             new Date(),
-            true);
+            true
+        );
     }
 
     /*TODO : Return file lists that is newly made or modified*/

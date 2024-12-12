@@ -10,6 +10,7 @@ import com.automatic.tech_blog.enums.InternalUrls;
 import com.automatic.tech_blog.enums.SecuritySpecs;
 import com.automatic.tech_blog.utils.ExternalApiUtils;
 import com.automatic.tech_blog.utils.SecurityUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -29,6 +30,7 @@ import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -116,6 +118,7 @@ public class BatchConfig {
 
     ApiResponse response = callApi(headers, method, apiUrl, fileLists);
     log.info("Response from insertMdFilesIntoDb: {}", response);
+
     return response.isSuccess();
   }
 
