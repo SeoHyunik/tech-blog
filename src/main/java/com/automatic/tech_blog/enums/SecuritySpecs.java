@@ -5,6 +5,7 @@ public enum SecuritySpecs {
   SECRET_KEY_ALGORITHM("AES"),
   ENV_DIR_PATH("env"),
   ENV_KEY_NAME("SECRET_KEY_BASE64"),
+  GOOGLE_AUTH_FILE_PATH("src/main/resources/encrypted/encrypted_google_auth.txt"),
   CREDENTIAL_FILE_PATH("src/main/resources/encrypted/encrypted_credential.txt"),
   OPEN_AI_SECRET_KEY_FILE_PATH("src/main/resources/encrypted/openai_secret_key.txt"),
   KIWIJAM_PW_FILE_PATH("src/main/resources/encrypted/kiwijam_pw.txt"),

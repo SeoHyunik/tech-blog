@@ -2,24 +2,21 @@ spring:
   application:
     name: tech-blog  # Application name
   datasource:
-    url: jdbc:mysql://localhost:3306/tech_blog_db?serverTimezone=UTC&useSSL=false  # Database connection URL
-    username: root  # Database username
-    password: gusdlr4150!  # Database password
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration
-  servlet:
-    encoding:
-      charset: UTF-8
-        force: true
-        force-response: true
+    url: jdbc:mysql://localhost:3306/tech_blog_db?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: gusdlr4150!
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: update  # Hibernate DDL generation strategy
-    show-sql: true  # Show generated SQL queries in logs
+      ddl-auto: none
+    show-sql: true
     properties:
-      hibernate.dialect: org.hibernate.dialect.MySQLDialect  # Hibernate dialect for MySQL
+      hibernate.dialect: org.hibernate.dialect.MySQL8Dialect
+  batch:
+    job:
+      enabled: true  # Set to true to enable job auto-start on application startup
+    jdbc:
+      initialize-schema: always  # Automatically initialize batch metadata tables
   security:
     oauth2:
       client:

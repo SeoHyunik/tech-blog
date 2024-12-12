@@ -114,7 +114,7 @@ public class JsonEncryptorDecryptor {
     if (!directory.exists()) {
       directory.mkdirs();
     }
-    File file = new File(directory, "exchange_rate_api_key.txt");
+    File file = new File(directory, "encrypted_google_auth.txt");
     try (FileOutputStream fos = new FileOutputStream(file)) {
       fos.write(encryptedJson.getBytes());
     }

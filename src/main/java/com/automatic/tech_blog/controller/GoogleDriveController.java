@@ -23,12 +23,14 @@ public class GoogleDriveController {
     /*TODO : Return file lists that is newly made*/
     @GetMapping("/scan-files")
     @ResponseStatus(HttpStatus.OK)
-    public ApiResponse scanFiles(@RequestBody @Valid GoogleAuthInfo authInfo) {
+    public ApiResponse scanFiles(@RequestHeader("Authorization") String authorizationHeader) {
+        GoogleAuthInfo authInfo = new GoogleAuthInfo(authorizationHeader);
         return new ApiResponse(
             HttpStatus.OK.value(),
             googleDriveService.scanFiles(authInfo),
             new Date(),
-            true);
+            true
+        );
     }
 
     /*TODO : Upload file infos into DB*/
