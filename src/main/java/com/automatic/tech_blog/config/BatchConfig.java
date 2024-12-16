@@ -1,29 +1,16 @@
 package com.automatic.tech_blog.config;
 
-import com.automatic.tech_blog.dto.request.ExternalApiRequest;
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
-import com.automatic.tech_blog.dto.request.UploadImageInfoRequest;
-import com.automatic.tech_blog.dto.response.ApiResponse;
-import com.automatic.tech_blog.dto.service.FileInfo;
 import com.automatic.tech_blog.dto.service.FileLists;
 import com.automatic.tech_blog.dto.service.ImageLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
-import com.automatic.tech_blog.enums.InternalUrls;
 import com.automatic.tech_blog.enums.SecuritySpecs;
 import com.automatic.tech_blog.service.GoogleDriveService;
 import com.automatic.tech_blog.service.WordPressService;
-import com.automatic.tech_blog.utils.ExternalApiUtils;
 import com.automatic.tech_blog.utils.SecurityUtils;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.io.IOException;
-import java.util.Date;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -33,10 +20,6 @@ import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.PlatformTransactionManager;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -65,21 +48,27 @@ public class BatchConfig {
     return new StepBuilder("step1_scanFilesAndInsertIntoDb", jobRepository)
         .tasklet(
             (contribution, chunkContext) -> {
-              // 1. 인증 정보 복호화
-              String authInfo = SecurityUtils.decryptAuthFile(SecuritySpecs.GOOGLE_AUTH_FILE_PATH.getValue());
-              log.info("Decrypted Google Auth Info");
+              try {
+                // 1. Decrypt Google Auth Info
+                GoogleAuthInfo authInfo = new GoogleAuthInfo(SecurityUtils.decryptAuthFile(SecuritySpecs.GOOGLE_AUTH_FILE_PATH.getValue()));
+                log.info("Decrypted Google Auth Info");
 
-              // 2. 파일 스캔
-              FileLists fileLists = googleDriveService.scanFiles(new GoogleAuthInfo(authInfo));
-              log.info("Scanned Files: {}", fileLists);
+                // 2. Scan Google Drive Files
+                FileLists fileLists = googleDriveService.scanFiles(authInfo);
+                log.info("Scanned Files: {}", fileLists);
 
-              // 3. MD 파일 DB 삽입
-              List<ProcessedDataList> mdFileResults = googleDriveService.uploadFiles(fileLists);
-              log.info("Inserted MD files into DB: {}", mdFileResults);
+                // 3. Insert MD files info into DB
+                List<ProcessedDataList> mdFileResults = googleDriveService.uploadFiles(fileLists);
+                log.info("Inserted MD files into DB: {}", mdFileResults);
 
-              // 4. 붙여넣기 이미지 DB 삽입
-              List<ProcessedDataList> imageResults = googleDriveService.uploadPastedImages(new GoogleAuthInfo(authInfo), fileLists);
-              log.info("Inserted Pasted Images into DB: {}", imageResults);
+                // 4. Insert Pasted Images info into DB
+                List<ProcessedDataList> imageResults = googleDriveService.uploadPastedImages(authInfo, fileLists);
+                log.info("Inserted Pasted Images into DB: {}", imageResults);
+
+              } catch (Exception e) {
+                log.error("Error occurred in step1_scanFilesAndInsertIntoDb", e);
+                throw new RuntimeException("Failed to complete step1_scanFilesAndInsertIntoDb", e);
+              }
 
               return RepeatStatus.FINISHED;
             },
@@ -88,31 +77,28 @@ public class BatchConfig {
         .build();
   }
 
-
-
   @Bean
   public Step step2_uploadImagesToWordPressLibrary() {
     return new StepBuilder("step2_uploadImagesToWordPressLibrary", jobRepository)
         .tasklet((contribution, chunkContext) -> {
           try {
-            // 1. 새 이미지를 가져옴
+            // 1. Get newly uploaded images from DB
             ImageLists imageLists = googleDriveService.getNewImages();
             log.info("Retrieved imageLists from getNewImages: {}", imageLists);
 
-            // 2. 워드프레스에 이미지 업로드
             if (!imageLists.imageLists().isEmpty()) {
+              // 2. Upload images to WordPress
               Flux<ProcessedDataList> uploadImagesResponse = wordpressService.uploadImages(imageLists);
 
-              // 3. 업로드된 이미지 정보를 DB에 업데이트
+              // 3. Update images info in DB
               Mono<List<ProcessedDataList>> processedDataListMono = uploadImagesResponse.collectList();
-              processedDataListMono.blockOptional().ifPresent(processedDataLists -> {
-                processedDataLists.forEach(data -> {
-                  wordpressService.updateImageInfo(data.id(), data.name());
-                  log.info("Updated image info in DB for image ID: {}", data.id());
-                });
-              });
+              processedDataListMono.blockOptional().ifPresent(processedDataLists
+                  -> processedDataLists.forEach(data -> {
+                wordpressService.updateImageInfo(data.id(), data.name());
+                log.info("Updated image info in DB for image ID: {}", data.id());
+              }));
             } else {
-              log.info("No new images to upload to WordPress.");
+              log.info("No images to be uploaded to WordPress.");
             }
           } catch (Exception e) {
             log.error("Error occurred during image upload to WordPress", e);
