@@ -13,7 +13,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/", "/login", "/public/**", "/blog/api/v1/google/**").permitAll() // 특정 경로는 인증 없이 접근 가능
+                .requestMatchers("/", "/login", "/public/**", "/blog/api/v1/**").permitAll() // 특정 경로는 인증 없이 접근 가능
                 .anyRequest().authenticated() // 나머지 경로는 인증 요구
             )
             .oauth2Login(oauth2 -> oauth2

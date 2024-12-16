@@ -41,28 +41,9 @@ public class GoogleDriveController {
     /*TODO : Upload file infos into DB*/
     @PostMapping("/upload-files")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse uploadFiles(@RequestBody String rawRequestBody) {
-        log.info("Raw JSON Request Body: {}", rawRequestBody);
-
-        // ObjectMapper 초기화
-        ObjectMapper objectMapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule()) // Java 8+ 시간 API 지원
-            .registerModule(new ParameterNamesModule()) // Record 지원
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // 날짜를 ISO-8601로 출력
-
-        FileLists fileLists;
-        try {
-            // JSON 데이터를 FileLists 타입으로 변환
-            fileLists = objectMapper.readValue(rawRequestBody, FileLists.class);
-        } catch (JsonProcessingException e) {
-            log.error("Failed to convert JSON to FileLists: {}", rawRequestBody, e);
-            throw new RuntimeException("Invalid JSON format", e);
-        }
-
-        log.info("Converted FileLists: {}", fileLists);
-
-        // googleDriveService 호출
-        Object uploadResult = googleDriveService.uploadFiles(fileLists);
+    public ApiResponse uploadFiles(@RequestBody FileLists requestBody) {
+        log.info("Raw JSON Request Body: {}", requestBody);
+        Object uploadResult = googleDriveService.uploadFiles(requestBody);
 
         if (uploadResult == null) {
             throw new RuntimeException("Failed to upload files");

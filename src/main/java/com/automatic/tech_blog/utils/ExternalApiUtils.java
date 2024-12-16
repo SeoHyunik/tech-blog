@@ -13,7 +13,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.io.File;
-import java.util.Objects;
 
 @Service
 @Slf4j
@@ -42,7 +41,7 @@ public class ExternalApiUtils {
               headers.addAll(request.headers());
             }
           })
-          .bodyValue(Objects.toString(request.body(), ""))
+          .bodyValue(request.body() != null ? request.body() : "")
           .retrieve()
           .toEntity(String.class)
           .block(); // Block to get synchronous response
