@@ -1,14 +1,21 @@
 package com.automatic.tech_blog.config;
 
+import com.automatic.tech_blog.dto.request.EditTechNotesRequest;
 import com.automatic.tech_blog.dto.request.GoogleAuthInfo;
+import com.automatic.tech_blog.dto.service.FileInfo;
 import com.automatic.tech_blog.dto.service.FileLists;
 import com.automatic.tech_blog.dto.service.ImageLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.enums.SecuritySpecs;
 import com.automatic.tech_blog.service.GoogleDriveService;
+import com.automatic.tech_blog.service.OpenAiService;
 import com.automatic.tech_blog.service.WordPressService;
 import com.automatic.tech_blog.utils.SecurityUtils;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
@@ -33,6 +40,7 @@ public class BatchConfig {
   private final PlatformTransactionManager transactionManager;
   private final GoogleDriveService googleDriveService;
   private final WordPressService wordpressService;
+  private final OpenAiService openAiService;
 
 
   @Bean
@@ -40,6 +48,7 @@ public class BatchConfig {
     return new JobBuilder("techBlogJob", jobRepository)
         .start(step1_scanFilesAndInsertIntoDb())
         .next(step2_uploadImagesToWordPressLibrary())
+        .next(step3_editTechNotesAndUploadToWordPress())
         .build();
   }
 
@@ -103,6 +112,66 @@ public class BatchConfig {
           } catch (Exception e) {
             log.error("Error occurred during image upload to WordPress", e);
             throw new RuntimeException("Failed to upload images to WordPress", e);
+          }
+          return RepeatStatus.FINISHED;
+        }, transactionManager)
+        .build();
+  }
+
+  @Bean
+  public Step step3_editTechNotesAndUploadToWordPress() {
+    return new StepBuilder("step3_editTechNotesAndUploadToWordPress", jobRepository)
+        .tasklet((contribution, chunkContext) -> {
+          try {
+            // 1. Get new files from Google Drive
+            FileLists newFiles = googleDriveService.getNewFiles();
+            log.info("Retrieved newFiles from getNewFiles: {}", newFiles);
+
+            if (!newFiles.fileLists().isEmpty()) {
+              // 2. Decrypt Google Auth Info
+              GoogleAuthInfo authInfo = new GoogleAuthInfo(SecurityUtils.decryptAuthFile(SecuritySpecs.GOOGLE_AUTH_FILE_PATH.getValue()));
+              log.info("Decrypted Google Auth Info");
+
+              // 3. Edit tech notes
+              EditTechNotesRequest editTechNotesRequest = new EditTechNotesRequest(authInfo, newFiles);
+              List<ProcessedDataList> processedDataLists = Optional.ofNullable(
+                  openAiService.editTechNotes(editTechNotesRequest)
+                      .collectList()
+                      .block()
+              ).orElse(Collections.emptyList());
+
+              if (processedDataLists.isEmpty()) {
+                log.warn("No processed tech notes returned from OpenAI service.");
+                return RepeatStatus.FINISHED;
+              }
+
+              // 4. Compare id of FileLists and processedDataLists
+              Set<String> processedIds = processedDataLists.stream()
+                  .map(ProcessedDataList::id) // Processed list의 ID만 추출
+                  .collect(Collectors.toSet());
+
+              // 5. Filter newFiles to include only files that exist in processedDataLists
+              List<FileInfo> filteredFiles = newFiles.fileLists().stream()
+                  .filter(file -> processedIds.contains(file.id()))
+                  .collect(Collectors.toList());
+              log.info("Filtered files for upload: {}", filteredFiles);
+
+              // 6. Post articles to WordPress
+              if (!filteredFiles.isEmpty()) {
+                FileLists filteredFileLists = new FileLists(filteredFiles);
+
+                Mono<List<ProcessedDataList>> uploadedFileListMono = wordpressService.postArticlesToBlog(filteredFileLists).collectList();
+
+                uploadedFileListMono.blockOptional().ifPresent(uploadedFileLists
+                    -> uploadedFileLists.forEach(data -> log.info("Uploaded File -> ID: {}, Name: {}", data.id(), data.name())));
+              } else {
+                log.info("No files to be uploaded to WordPress.");
+                return RepeatStatus.FINISHED;
+              }
+            }
+          } catch (Exception e) {
+            log.error("Error occurred during article upload to WordPress", e);
+            throw new RuntimeException("Failed to upload articles to WordPress", e);
           }
           return RepeatStatus.FINISHED;
         }, transactionManager)

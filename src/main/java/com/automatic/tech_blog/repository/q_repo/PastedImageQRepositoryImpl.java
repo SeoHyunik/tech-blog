@@ -29,12 +29,14 @@ public class PastedImageQRepositoryImpl implements PastedImageQRepository {
   }
 
   @Override
-  public String findByImageName(String imageName) {
+  public Optional<String> findByImageName(String imageName) {
     TbAttachedImages result = queryFactory.selectFrom(tbAttachedImages)
         .where(tbAttachedImages.imageName.eq(imageName))
         .fetchOne();
 
-    return Objects.requireNonNull(result).getImageUrl();
+    return result == null
+        ? Optional.empty()
+        : Optional.of(result.getImageUrl());
   }
 
   @Override
@@ -55,5 +57,20 @@ public class PastedImageQRepositoryImpl implements PastedImageQRepository {
     return imageInfoList.isEmpty()
         ? Optional.empty()
         : Optional.of(new ImageLists(imageInfoList));
+  }
+
+  @Override
+  public ImageLists findAllImages() {
+    List<ImageInfo> imageInfoList = queryFactory
+        .select(Projections.constructor(
+            ImageInfo.class,
+            tbAttachedImages.imageId,
+            tbAttachedImages.imageName,
+            tbAttachedImages.imageFilePath
+        ))
+        .from(tbAttachedImages)
+        .fetch();
+
+    return new ImageLists(imageInfoList);
   }
 }

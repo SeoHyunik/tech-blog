@@ -55,4 +55,22 @@ public class MdFileQRepositoryImpl implements MdFileQRepository {
         .where(tbMdFiles.fileName.eq(fileName))
         .fetchOne();
   }
+
+  @Override
+  public List<FileInfo> findAllFiles() {
+    QTbMdFiles tbMdFiles = QTbMdFiles.tbMdFiles;
+
+    return queryFactory
+        .select(Projections.constructor(
+            FileInfo.class,
+            tbMdFiles.fileName,
+            tbMdFiles.fileId,
+            tbMdFiles.filePath,
+            tbMdFiles.createdAt,
+            tbMdFiles.modifiedAt,
+            tbMdFiles.deletedAt
+        ))
+        .from(tbMdFiles)
+        .fetch();
+  }
 }

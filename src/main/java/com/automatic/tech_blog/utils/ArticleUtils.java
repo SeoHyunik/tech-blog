@@ -1,6 +1,7 @@
 package com.automatic.tech_blog.utils;
 
 import com.automatic.tech_blog.repository.q_repo.PastedImageQRepository;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
@@ -35,12 +36,12 @@ public class ArticleUtils {
       log.info("Matched tag: {}, Extracted src: {}", matchedTag, imageSrc);
 
       // 4. Search the database for the new image URL
-      String imageUrl = imageQRepository.findByImageName(imageSrc);
+      Optional<String> imageUrl = imageQRepository.findByImageName(imageSrc);
 
-      if (imageUrl != null) {
+      if (imageUrl.isPresent()) {
         // 5.1 If the image URL exists, replace the src with the new URL
-        String newImgTag = matchedTag.replace(imageSrc, imageUrl);
-        log.info("Image URL found. Replacing src with: {}", imageUrl);
+        String newImgTag = matchedTag.replace(imageSrc, imageUrl.get());
+        log.info("Image URL found. Replacing src with: {}", imageUrl.get());
         matcher.appendReplacement(updatedContent, Matcher.quoteReplacement(newImgTag));
       } else {
         // 5.2 If the image URL does not exist, keep the original tag

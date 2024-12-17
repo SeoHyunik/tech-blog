@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PastedImageQRepository {
   Optional<TbAttachedImages> findByImageId(String imageId);
-  String findByImageName(String imageName);
+  Optional<String> findByImageName(String imageName);
   Optional<ImageLists> findNewImages(Date since);
+  ImageLists findAllImages();
 }
