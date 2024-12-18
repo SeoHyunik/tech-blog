@@ -14,7 +14,7 @@ spring:
       hibernate.dialect: org.hibernate.dialect.MySQL8Dialect
   batch:
     job:
-      enabled: true  # Set to true to enable job auto-start on application startup
+      enabled: false  # Set to true to enable job auto-start on application startup
     jdbc:
       initialize-schema: always  # Automatically initialize batch metadata tables
   security:
@@ -36,3 +36,12 @@ spring:
             authorization-uri: https://accounts.google.com/o/oauth2/auth
             token-uri: https://oauth2.googleapis.com/token
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+  logging:
+    level:
+      root: info  # Root logging level
+      com.automatic: debug  # Example: Set debug level for specific package
+    file:
+      path: logs  # Directory to store log files
+    pattern:
+      console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+      file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
