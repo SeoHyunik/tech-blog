@@ -21,12 +21,11 @@ public class BatchScheduler {
   private final JobLauncher jobLauncher;
   private final Job techBlogJob;
 
-  @Scheduled(cron = "0 50 * * * *") // 매 시간 50분에 실행
+  @Scheduled(cron = "0 50 * * * *") // Every hour at 50 minutes
   public void runTechBlogJob() {
     try {
       String uuid = UUID.randomUUID().toString();
       MDC.put("uuid", uuid);
-      // 배치 작업 실행
       JobParameters jobParameters = new JobParametersBuilder()
           .addLong("startAt", System.currentTimeMillis())
           .toJobParameters();
@@ -36,7 +35,7 @@ public class BatchScheduler {
     } catch (Exception e) {
       log.error("Error while running TechBlogJob", e);
     } finally {
-      MDC.clear(); // MDC 데이터 정리
+      MDC.clear();
     }
   }
 }

@@ -147,7 +147,7 @@ public class BatchConfig {
 
               // 4. Compare id of FileLists and processedDataLists
               Set<String> processedIds = processedDataLists.stream()
-                  .map(ProcessedDataList::id) // Processed list의 ID만 추출
+                  .map(ProcessedDataList::id) // Get the ID of each ProcessedDataList
                   .collect(Collectors.toSet());
 
               // 5. Filter newFiles to include only files that exist in processedDataLists
