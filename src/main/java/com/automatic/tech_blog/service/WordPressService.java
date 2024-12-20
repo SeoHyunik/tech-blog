@@ -8,5 +8,4 @@ import reactor.core.publisher.Flux;
 public interface WordPressService {
   Flux<ProcessedDataList> postArticlesToBlog(FileLists fileLists);
   Flux<ProcessedDataList> uploadImages(ImageLists imageLists);
-  void updateImageInfo(String imageId, String imageUrl);
 }

@@ -36,6 +36,10 @@ class GoogleDriveServiceImplTest {
 
   @InjectMocks
   @Autowired
+  private MdFileAndImageServiceImpl mdFileAndImageService;
+
+  @InjectMocks
+  @Autowired
   private OpenAiServiceImpl openAiService;
 
   private GoogleAuthInfo authInfo;
@@ -66,19 +70,19 @@ class GoogleDriveServiceImplTest {
     fileLists.fileLists().forEach(file -> System.out.println("File Name: " + file.fileName() + ", File Id: " + file.id() + ", Directory: " + file.directory()+ ", Created At: "+ file.createdAt()+ ", Modified At: "+ file.modifiedAt()));
 
     // Act - Upload scanned files to the database
-    List<ProcessedDataList> result = googleService.uploadFiles(fileLists);
+    List<ProcessedDataList> result = mdFileAndImageService.uploadFilesInfo(fileLists);
 
     // Assert - Check if the upload was successful
     assertNotNull(result, "Upload result should not be null");
 
     // Act - Upload images to the database
-    List<ProcessedDataList> imgResult = googleService.uploadPastedImages(authInfo, fileLists);
+    List<ProcessedDataList> imgResult = mdFileAndImageService.uploadImagesInfo(authInfo, fileLists);
     System.out.println("Upload Result: " + imgResult);
   }
   @Test
   void testGetNewFiles() {
     // Act - Retrieve new or modified files
-    FileLists newFiles = googleService.getNewFiles();
+    FileLists newFiles = mdFileAndImageService.getNewFilesInfo();
 
     // Assert - Check if the returned file list is not null and contains expected files
     assertNotNull(newFiles, "New files list should not be null");

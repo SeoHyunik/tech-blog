@@ -1,6 +1,5 @@
 package com.automatic.tech_blog.controller;
 
-import com.automatic.tech_blog.dto.request.UploadImageInfoRequest;
 import com.automatic.tech_blog.dto.response.ApiResponse;
 import com.automatic.tech_blog.dto.service.FileLists;
 import com.automatic.tech_blog.dto.service.ImageLists;
@@ -11,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -51,13 +49,5 @@ public class WordPressController {
             new Date(),
             true
         ));
-  }
-
-  /*TODO : Update image info with image ID and URL*/
-  @PutMapping("/update-image-info")
-  @ResponseStatus(HttpStatus.OK)
-  public ApiResponse updateImageInfo(@RequestBody @Valid UploadImageInfoRequest imageInfo) {
-    wpService.updateImageInfo(imageInfo.imageId(), imageInfo.imageUrl());
-    return new ApiResponse(HttpStatus.OK.value(), "Image info updated", new Date(), true);
   }
 }

@@ -8,6 +8,7 @@ import com.automatic.tech_blog.dto.service.ImageLists;
 import com.automatic.tech_blog.dto.service.ProcessedDataList;
 import com.automatic.tech_blog.enums.SecuritySpecs;
 import com.automatic.tech_blog.service.GoogleDriveService;
+import com.automatic.tech_blog.service.MdFileAndImageService;
 import com.automatic.tech_blog.service.OpenAiService;
 import com.automatic.tech_blog.service.WordPressService;
 import com.automatic.tech_blog.utils.SecurityUtils;
@@ -41,6 +42,7 @@ public class BatchConfig {
   private final GoogleDriveService googleDriveService;
   private final WordPressService wordpressService;
   private final OpenAiService openAiService;
+  private final MdFileAndImageService mdFileAndImageService;
 
 
   @Bean
@@ -67,11 +69,11 @@ public class BatchConfig {
                 log.info("Scanned Files: {}", fileLists);
 
                 // 3. Insert MD files info into DB
-                List<ProcessedDataList> mdFileResults = googleDriveService.uploadFiles(fileLists);
+                List<ProcessedDataList> mdFileResults = mdFileAndImageService.uploadFilesInfo(fileLists);
                 log.info("Inserted MD files into DB: {}", mdFileResults);
 
                 // 4. Insert Pasted Images info into DB
-                List<ProcessedDataList> imageResults = googleDriveService.uploadPastedImages(authInfo, fileLists);
+                List<ProcessedDataList> imageResults = mdFileAndImageService.uploadImagesInfo(authInfo, fileLists);
                 log.info("Inserted Pasted Images into DB: {}", imageResults);
 
               } catch (Exception e) {
@@ -92,8 +94,8 @@ public class BatchConfig {
         .tasklet((contribution, chunkContext) -> {
           try {
             // 1. Get newly uploaded images from DB
-            ImageLists imageLists = googleDriveService.getNewImages();
-            log.info("Retrieved imageLists from getNewImages: {}", imageLists);
+            ImageLists imageLists = mdFileAndImageService.getNewImagesInfo();
+            log.info("Retrieved imageLists from getNewImagesInfo: {}", imageLists);
 
             if (!imageLists.imageLists().isEmpty()) {
               // 2. Upload images to WordPress
@@ -103,7 +105,7 @@ public class BatchConfig {
               Mono<List<ProcessedDataList>> processedDataListMono = uploadImagesResponse.collectList();
               processedDataListMono.blockOptional().ifPresent(processedDataLists
                   -> processedDataLists.forEach(data -> {
-                wordpressService.updateImageInfo(data.id(), data.name());
+                mdFileAndImageService.updateImageInfo(data.id(), data.name());
                 log.info("Updated image info in DB for image ID: {}", data.id());
               }));
             } else {
@@ -124,8 +126,8 @@ public class BatchConfig {
         .tasklet((contribution, chunkContext) -> {
           try {
             // 1. Get new files from Google Drive
-            FileLists newFiles = googleDriveService.getNewFiles();
-            log.info("Retrieved newFiles from getNewFiles: {}", newFiles);
+            FileLists newFiles = mdFileAndImageService.getNewFilesInfo();
+            log.info("Retrieved newFiles from getNewFilesInfo: {}", newFiles);
 
             if (!newFiles.fileLists().isEmpty()) {
               // 2. Decrypt Google Auth Info
