@@ -10,8 +10,7 @@ import lombok.Data;
 @Table(name = "tb_posts_info")
 @Data
 public class TbPostsInfo {
-  @Id
-  private int id;
+  @Id private int id;
   private String title;
   private int contentId;
   private String fileId;

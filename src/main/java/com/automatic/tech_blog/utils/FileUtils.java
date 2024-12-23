@@ -16,23 +16,23 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 public class FileUtils {
-    public static Set<String> getExistingHtmlFiles() {
-      try {
-        // 1. Ensure the directory exists
-        Path outputDir = Paths.get(InternalPaths.HTML_SAVE_DIR.getPath());
-        if (!Files.exists(outputDir))
-          Files.createDirectories(outputDir); // Blocking call
+  public static Set<String> getExistingHtmlFiles() {
+    try {
+      // 1. Ensure the directory exists
+      Path outputDir = Paths.get(InternalPaths.HTML_SAVE_DIR.getPath());
+      if (!Files.exists(outputDir)) Files.createDirectories(outputDir); // Blocking call
 
-        // 2. Scan the directory for existing HTML files and return the set of file names
-        try (Stream<Path> stream = Files.list(outputDir)) {
-          return stream.filter(path -> path.toString().endsWith(".html"))
-              .map(path -> path.getFileName().toString())
-              .collect(Collectors.toSet());
-        }
-      } catch (IOException e) {
-        throw new IllegalStateException("Failed to scan existing HTML files", e);
+      // 2. Scan the directory for existing HTML files and return the set of file names
+      try (Stream<Path> stream = Files.list(outputDir)) {
+        return stream
+            .filter(path -> path.toString().endsWith(".html"))
+            .map(path -> path.getFileName().toString())
+            .collect(Collectors.toSet());
       }
+    } catch (IOException e) {
+      throw new IllegalStateException("Failed to scan existing HTML files", e);
     }
+  }
 
   public static String getHtmlContent(String fileName) {
     try {

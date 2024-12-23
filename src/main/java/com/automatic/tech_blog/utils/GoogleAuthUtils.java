@@ -23,17 +23,15 @@ import com.google.api.services.drive.DriveScopes;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.UserCredentials;
-import java.util.Arrays;
-import java.util.List;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
@@ -41,7 +39,8 @@ public class GoogleAuthUtils {
   public GoogleCredentials getGoogleCredentials(GoogleAuthInfo authInfo) {
     try {
       // 1. Decrypt credentials to obtain OAuthCredentials
-      OAuthCredentials oauthCredentials = SecurityUtils.decryptCredentials(SecuritySpecs.CREDENTIAL_FILE_PATH.getValue());
+      OAuthCredentials oauthCredentials =
+          SecurityUtils.decryptCredentials(SecuritySpecs.CREDENTIAL_FILE_PATH.getValue());
 
       // 2. Validate client ID
       if (!oauthCredentials.web().client_id().equals(authInfo.clientId()))
@@ -49,36 +48,44 @@ public class GoogleAuthUtils {
 
       // 3. Set up GoogleClientSecrets with decrypted data
       GoogleClientSecrets clientSecrets = new GoogleClientSecrets();
-      GoogleClientSecrets.Details details = new GoogleClientSecrets.Details()
-          .setClientId(oauthCredentials.web().client_id())
-          .setClientSecret(oauthCredentials.web().client_secret())
-          .setAuthUri(oauthCredentials.web().auth_uri())
-          .setTokenUri(oauthCredentials.web().token_uri())
-          .setRedirectUris(oauthCredentials.web().redirect_uris());
+      GoogleClientSecrets.Details details =
+          new GoogleClientSecrets.Details()
+              .setClientId(oauthCredentials.web().client_id())
+              .setClientSecret(oauthCredentials.web().client_secret())
+              .setAuthUri(oauthCredentials.web().auth_uri())
+              .setTokenUri(oauthCredentials.web().token_uri())
+              .setRedirectUris(oauthCredentials.web().redirect_uris());
       clientSecrets.setInstalled(details);
 
       // 4. Define the required scopes
-      List<String> scopes = Arrays.asList(
-          DriveScopes.DRIVE,          // Full access to Drive
-          DriveScopes.DRIVE_FILE      // Access to files created by the app
-      );
+      List<String> scopes =
+          Arrays.asList(
+              DriveScopes.DRIVE, // Full access to Drive
+              DriveScopes.DRIVE_FILE // Access to files created by the app
+              );
 
       // 5. Set up authorization flow
-      GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
-          GoogleNetHttpTransport.newTrustedTransport(),
-          GsonFactory.getDefaultInstance(),
-          clientSecrets,
-          scopes)
-          .setDataStoreFactory(new FileDataStoreFactory(new File(SecuritySpecs.TOKENS_DIRECTORY_PATH.getValue())))
-          .setAccessType("offline") // To ensure a refresh token is provided
-          .setApprovalPrompt("auto")
-          .build();
+      GoogleAuthorizationCodeFlow flow =
+          new GoogleAuthorizationCodeFlow.Builder(
+                  GoogleNetHttpTransport.newTrustedTransport(),
+                  GsonFactory.getDefaultInstance(),
+                  clientSecrets,
+                  scopes)
+              .setDataStoreFactory(
+                  new FileDataStoreFactory(
+                      new File(SecuritySpecs.TOKENS_DIRECTORY_PATH.getValue())))
+              .setAccessType("offline") // To ensure a refresh token is provided
+              .setApprovalPrompt("auto")
+              .build();
 
       // 6. Load or refresh existing credentials
       Credential credential = flow.loadCredential("user");
       if (credential == null || credential.getRefreshToken() == null) {
         // 6-1. Clear any existing stored credentials
-        File storedCredentialFile = new File(SecuritySpecs.TOKENS_DIRECTORY_PATH.getValue() + SecuritySpecs.TOKEN_FILE_NAME.getValue());
+        File storedCredentialFile =
+            new File(
+                SecuritySpecs.TOKENS_DIRECTORY_PATH.getValue()
+                    + SecuritySpecs.TOKEN_FILE_NAME.getValue());
         if (storedCredentialFile.exists() && storedCredentialFile.delete())
           log.info("StoredCredential file deleted successfully.");
 
@@ -88,14 +95,16 @@ public class GoogleAuthUtils {
 
         // 6-3. Validate refresh token
         if (credential.getRefreshToken() == null)
-          throw new IllegalStateException("Refresh token is null. Ensure offline access is enabled.");
+          throw new IllegalStateException(
+              "Refresh token is null. Ensure offline access is enabled.");
       } else {
         log.info("Existing credential with refresh token found.");
       }
 
       // 7. Ensure Access Token is valid
-      if (credential.getAccessToken() == null || credential.getExpirationTimeMilliseconds() == null ||
-          credential.getExpirationTimeMilliseconds() <= System.currentTimeMillis()) {
+      if (credential.getAccessToken() == null
+          || credential.getExpirationTimeMilliseconds() == null
+          || credential.getExpirationTimeMilliseconds() <= System.currentTimeMillis()) {
         log.info("Access token expired or invalid. Refreshing...");
         credential.refreshToken();
       }
@@ -107,9 +116,10 @@ public class GoogleAuthUtils {
           .setClientId(oauthCredentials.web().client_id())
           .setClientSecret(oauthCredentials.web().client_secret())
           .setRefreshToken(credential.getRefreshToken())
-          .setAccessToken(new AccessToken(
-              credential.getAccessToken(),
-              new Date(credential.getExpirationTimeMilliseconds())))
+          .setAccessToken(
+              new AccessToken(
+                  credential.getAccessToken(),
+                  new Date(credential.getExpirationTimeMilliseconds())))
           .build();
     } catch (Exception e) {
       log.error("Error creating Google Credentials: {}", e.getMessage(), e);
@@ -117,8 +127,8 @@ public class GoogleAuthUtils {
     }
   }
 
-
-  public AccessToken refreshAccessToken(GoogleCredentials credentials, GoogleAuthInfo authInfo) throws Exception {
+  public AccessToken refreshAccessToken(GoogleCredentials credentials, GoogleAuthInfo authInfo)
+      throws Exception {
     // 1. Check if credentials are an instance of UserCredentials
     if (!(credentials instanceof UserCredentials))
       credentials = getGoogleCredentials(new GoogleAuthInfo(authInfo.clientId()));
@@ -127,19 +137,22 @@ public class GoogleAuthUtils {
 
     // 2. Validate that a refresh token is available
     if (refreshToken == null)
-      throw new IllegalStateException("Refresh token is missing. Ensure offline access is enabled and credentials are refreshed.");
+      throw new IllegalStateException(
+          "Refresh token is missing. Ensure offline access is enabled and credentials are refreshed.");
 
     // 3. Decrypt OAuth credentials to obtain OAuth client details
-    OAuthCredentials oauthCredentials = SecurityUtils.decryptCredentials(SecuritySpecs.CREDENTIAL_FILE_PATH.getValue());
+    OAuthCredentials oauthCredentials =
+        SecurityUtils.decryptCredentials(SecuritySpecs.CREDENTIAL_FILE_PATH.getValue());
 
     // 4. Set up GoogleClientSecrets with decrypted client details
     GoogleClientSecrets clientSecrets = new GoogleClientSecrets();
-    GoogleClientSecrets.Details details = new GoogleClientSecrets.Details()
-        .setClientId(oauthCredentials.web().client_id())
-        .setClientSecret(oauthCredentials.web().client_secret())
-        .setAuthUri(oauthCredentials.web().auth_uri())
-        .setTokenUri(oauthCredentials.web().token_uri())
-        .setRedirectUris(oauthCredentials.web().redirect_uris());
+    GoogleClientSecrets.Details details =
+        new GoogleClientSecrets.Details()
+            .setClientId(oauthCredentials.web().client_id())
+            .setClientSecret(oauthCredentials.web().client_secret())
+            .setAuthUri(oauthCredentials.web().auth_uri())
+            .setTokenUri(oauthCredentials.web().token_uri())
+            .setRedirectUris(oauthCredentials.web().redirect_uris());
     clientSecrets.setInstalled(details);
 
     // 5. Prepare POST request parameters for the token endpoint

@@ -11,13 +11,13 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class LoggingAspect {
-    @Before("execution(* com.automatic.techblog..*(..))")
-    public void logBefore(JoinPoint joinPoint) {
-        log.info("Entering: {} with arguments {}", joinPoint.getSignature(), joinPoint.getArgs());
-    }
+  @Before("execution(* com.automatic.techblog..*(..))")
+  public void logBefore(JoinPoint joinPoint) {
+    log.info("Entering: {} with arguments {}", joinPoint.getSignature(), joinPoint.getArgs());
+  }
 
-    @AfterReturning(pointcut = "execution(* com.automatic.techblog..*(..))", returning = "result")
-    public void logAfter(JoinPoint joinPoint, Object result) {
-        log.info("Exiting: {} with result {}", joinPoint.getSignature(), result);
-    }
+  @AfterReturning(pointcut = "execution(* com.automatic.techblog..*(..))", returning = "result")
+  public void logAfter(JoinPoint joinPoint, Object result) {
+    log.info("Exiting: {} with result {}", joinPoint.getSignature(), result);
+  }
 }

@@ -32,7 +32,8 @@ public class OAuth2ClientConfig {
   }
 
   @Bean
-  public OAuth2AuthorizedClientService authorizedClientService(ClientRegistrationRepository clientRegistrationRepository) {
+  public OAuth2AuthorizedClientService authorizedClientService(
+      ClientRegistrationRepository clientRegistrationRepository) {
     return new InMemoryOAuth2AuthorizedClientService(clientRegistrationRepository);
   }
 }

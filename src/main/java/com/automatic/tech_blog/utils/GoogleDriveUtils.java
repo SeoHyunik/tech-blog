@@ -31,7 +31,8 @@ import org.springframework.stereotype.Service;
 public class GoogleDriveUtils {
   private final GoogleAuthUtils authUtils;
 
-  public Drive createDriveService(GoogleAuthInfo authInfo, String applicationName) throws Exception {
+  public Drive createDriveService(GoogleAuthInfo authInfo, String applicationName)
+      throws Exception {
     // 1. Initialize transport and JSON factory
     HttpTransport transport = GoogleNetHttpTransport.newTrustedTransport();
     JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
@@ -39,7 +40,9 @@ public class GoogleDriveUtils {
     // 2. Load credentials and refresh token
     GoogleCredentials credentials = authUtils.getGoogleCredentials(authInfo);
     if (credentials.createScopedRequired())
-      credentials = credentials.createScoped(Collections.singletonList(ExternalUrls.GOOGLE_DRIVE_AUTH_READONLY.getUrl()));
+      credentials =
+          credentials.createScoped(
+              Collections.singletonList(ExternalUrls.GOOGLE_DRIVE_AUTH_READONLY.getUrl()));
     credentials.refreshIfExpired();
 
     // 3. Build and return the Drive service
@@ -50,10 +53,13 @@ public class GoogleDriveUtils {
 
   public String findFolderIdByName(Drive driveService, String folderName) throws IOException {
     // 1. Search for folders with the given name
-    FileList result = driveService.files().list()
-        .setQ("mimeType = 'application/vnd.google-apps.folder' and name = '" + folderName + "'")
-        .setFields("files(id, name)")
-        .execute();
+    FileList result =
+        driveService
+            .files()
+            .list()
+            .setQ("mimeType = 'application/vnd.google-apps.folder' and name = '" + folderName + "'")
+            .setFields("files(id, name)")
+            .execute();
 
     // 2. Return the ID of the first matched folder
     return (result.getFiles() != null && !result.getFiles().isEmpty())
@@ -70,9 +76,8 @@ public class GoogleDriveUtils {
 
     while (currentFileId != null) {
       // 3. Fetch the file metadata, including its name and parent ID(s)
-      com.google.api.services.drive.model.File file = driveService.files().get(currentFileId)
-          .setFields("id, name, parents")
-          .execute();
+      com.google.api.services.drive.model.File file =
+          driveService.files().get(currentFileId).setFields("id, name, parents").execute();
 
       // 4. Prepend the current file/folder name to the path
       filePath.insert(0, "/" + file.getName());
@@ -88,12 +93,17 @@ public class GoogleDriveUtils {
   }
 
   public void findMdFilesInDirectory(
-      Drive driveService, String directoryId, List<FileInfo> fileInfos, String parentFolderName) throws IOException {
+      Drive driveService, String directoryId, List<FileInfo> fileInfos, String parentFolderName)
+      throws IOException {
     // 1. Search for all files in the directory
-    FileList result = driveService.files().list()
-        .setQ("'" + directoryId + "' in parents")
-        .setFields("files(id, name, mimeType, createdTime, modifiedTime)")  // Include all file metadata
-        .execute();
+    FileList result =
+        driveService
+            .files()
+            .list()
+            .setQ("'" + directoryId + "' in parents")
+            .setFields(
+                "files(id, name, mimeType, createdTime, modifiedTime)") // Include all file metadata
+            .execute();
 
     List<File> files = result.getFiles();
     if (files != null && !files.isEmpty()) {
@@ -103,16 +113,17 @@ public class GoogleDriveUtils {
           findMdFilesInDirectory(driveService, file.getId(), fileInfos, file.getName());
         } else if (file.getName().endsWith(".md") || file.getName().contains("Pasted image")) {
           // 3. If the file is an .md file, add it to the list
-          String fileName = new String(file.getName().getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+          String fileName =
+              new String(file.getName().getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
           Date createdAt = FunctionUtils.convertGoogleDateTimeToDate(file.getCreatedTime());
           Date modifiedAt = FunctionUtils.convertGoogleDateTimeToDate(file.getModifiedTime());
 
-          fileInfos.add(new FileInfo(fileName, file.getId(), parentFolderName, createdAt, modifiedAt, null));
+          fileInfos.add(
+              new FileInfo(fileName, file.getId(), parentFolderName, createdAt, modifiedAt, null));
         }
       }
     }
   }
-
 
   public String getFileContent(Drive driveService, String fileId, GoogleAuthInfo googleAuthInfo) {
     try {
@@ -120,15 +131,19 @@ public class GoogleDriveUtils {
       GoogleCredentials credentials = authUtils.getGoogleCredentials(googleAuthInfo);
 
       // 2. Ensure AccessToken is valid
-      if (credentials.getAccessToken() == null || credentials.getAccessToken().getTokenValue() == null)
+      if (credentials.getAccessToken() == null
+          || credentials.getAccessToken().getTokenValue() == null)
         credentials.refreshIfExpired(); // Refresh the token if expired
 
       // 3. Inject AccessToken into request
       HttpRequestFactory requestFactory = driveService.getRequestFactory();
       HttpRequest request =
           requestFactory.buildGetRequest(
-              new GenericUrl(ExternalUrls.GOOGLE_DRIVE_FILE_METADATA.getUrl().replace("{FILE_ID}", fileId)));
-      request.getHeaders().setAuthorization("Bearer " + credentials.getAccessToken().getTokenValue());
+              new GenericUrl(
+                  ExternalUrls.GOOGLE_DRIVE_FILE_METADATA.getUrl().replace("{FILE_ID}", fileId)));
+      request
+          .getHeaders()
+          .setAuthorization("Bearer " + credentials.getAccessToken().getTokenValue());
 
       ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
       request.execute().download(outputStream);
@@ -141,6 +156,7 @@ public class GoogleDriveUtils {
   }
 
   public boolean isMdFile(String fileName) {
-    return fileName.endsWith(".md") && !(fileName.contains("Pasted image") || fileName.contains("Exported image"));
+    return fileName.endsWith(".md")
+        && !(fileName.contains("Pasted image") || fileName.contains("Exported image"));
   }
 }

@@ -1,6 +1,8 @@
 package com.automatic.tech_blog.scheduler;
 
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParameters;
@@ -9,8 +11,6 @@ import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Configuration
 @EnableScheduling
@@ -26,9 +26,10 @@ public class BatchScheduler {
     try {
       String uuid = UUID.randomUUID().toString();
       MDC.put("uuid", uuid);
-      JobParameters jobParameters = new JobParametersBuilder()
-          .addLong("startAt", System.currentTimeMillis())
-          .toJobParameters();
+      JobParameters jobParameters =
+          new JobParametersBuilder()
+              .addLong("startAt", System.currentTimeMillis())
+              .toJobParameters();
 
       jobLauncher.run(techBlogJob, jobParameters);
       log.info("TechBlogJob executed successfully.");

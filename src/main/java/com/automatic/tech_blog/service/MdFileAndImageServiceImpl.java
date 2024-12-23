@@ -30,7 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class MdFileAndImageServiceImpl implements MdFileAndImageService{
+public class MdFileAndImageServiceImpl implements MdFileAndImageService {
   private final GoogleDriveUtils driveUtils;
   private final MdFileRepository mdFileRepository;
   private final MdFileQRepository mdFileQRepository;
@@ -44,51 +44,64 @@ public class MdFileAndImageServiceImpl implements MdFileAndImageService{
     List<ProcessedDataList> processedData = new ArrayList<>();
 
     fileLists.fileLists().stream()
-        .filter(fileInfo -> driveUtils.isMdFile(fileInfo.fileName())) // Filter out non-Markdown files
-        .forEach(fileInfo -> {
-          try {
-            // 2. Fetch existing record by fileId if it exists
-            Optional<TbMdFiles> existingFile = mdFileQRepository.findByFileId(fileInfo.id());
+        .filter(
+            fileInfo -> driveUtils.isMdFile(fileInfo.fileName())) // Filter out non-Markdown files
+        .forEach(
+            fileInfo -> {
+              try {
+                // 2. Fetch existing record by fileId if it exists
+                Optional<TbMdFiles> existingFile = mdFileQRepository.findByFileId(fileInfo.id());
 
-            String newFilePath = fileInfo.directory();
+                String newFilePath = fileInfo.directory();
 
-            if (existingFile.isPresent()) {
-              TbMdFiles tbMdFileInfo = existingFile.get();
+                if (existingFile.isPresent()) {
+                  TbMdFiles tbMdFileInfo = existingFile.get();
 
-              // 3. Check if either modifiedAt or filePath has changed
-              boolean isModifiedAtDifferent = !Objects.equals(fileInfo.modifiedAt(), tbMdFileInfo.getModifiedAt());
-              boolean isFilePathDifferent = !Objects.equals(newFilePath, tbMdFileInfo.getFilePath());
+                  // 3. Check if either modifiedAt or filePath has changed
+                  boolean isModifiedAtDifferent =
+                      !Objects.equals(fileInfo.modifiedAt(), tbMdFileInfo.getModifiedAt());
+                  boolean isFilePathDifferent =
+                      !Objects.equals(newFilePath, tbMdFileInfo.getFilePath());
 
-              if (isModifiedAtDifferent || isFilePathDifferent) {
-                tbMdFileInfo.setModifiedAt(fileInfo.modifiedAt());  // Update modifiedAt only if different
-                tbMdFileInfo.setFileName(fileInfo.fileName());  // Always update fileName
-                tbMdFileInfo.setFilePath(newFilePath);  // Update filePath only if different
-                mdFileRepository.save(tbMdFileInfo);
-                log.info("Updated file with ID: {} and Name: {}", tbMdFileInfo.getFileId(), tbMdFileInfo.getFileName());
+                  if (isModifiedAtDifferent || isFilePathDifferent) {
+                    tbMdFileInfo.setModifiedAt(
+                        fileInfo.modifiedAt()); // Update modifiedAt only if different
+                    tbMdFileInfo.setFileName(fileInfo.fileName()); // Always update fileName
+                    tbMdFileInfo.setFilePath(newFilePath); // Update filePath only if different
+                    mdFileRepository.save(tbMdFileInfo);
+                    log.info(
+                        "Updated file with ID: {} and Name: {}",
+                        tbMdFileInfo.getFileId(),
+                        tbMdFileInfo.getFileName());
+                  }
+
+                  // 4. Add to processed data list
+                  processedData.add(
+                      new ProcessedDataList(tbMdFileInfo.getFileId(), tbMdFileInfo.getFileName()));
+                } else {
+                  // 5. Insert new file
+                  TbMdFiles entity = new TbMdFiles();
+                  entity.setFileId(fileInfo.id());
+                  entity.setFileName(fileInfo.fileName());
+                  entity.setFilePath(newFilePath);
+                  entity.setCreatedAt(fileInfo.createdAt());
+                  entity.setModifiedAt(fileInfo.modifiedAt());
+                  mdFileRepository.save(entity);
+
+                  log.info(
+                      "Inserted new file with ID: {} and Name: {}",
+                      entity.getFileId(),
+                      entity.getFileName());
+
+                  // 6. Add to processed data list
+                  processedData.add(
+                      new ProcessedDataList(entity.getFileId(), entity.getFileName()));
+                }
+              } catch (DataIntegrityViolationException | ConstraintViolationException e) {
+                log.error("Duplicate fileId encountered for file: {}", fileInfo.fileName());
+                throw new IllegalStateException("Error occurred while uploading files", e);
               }
-
-              // 4. Add to processed data list
-              processedData.add(new ProcessedDataList(tbMdFileInfo.getFileId(), tbMdFileInfo.getFileName()));
-            } else {
-              // 5. Insert new file
-              TbMdFiles entity = new TbMdFiles();
-              entity.setFileId(fileInfo.id());
-              entity.setFileName(fileInfo.fileName());
-              entity.setFilePath(newFilePath);
-              entity.setCreatedAt(fileInfo.createdAt());
-              entity.setModifiedAt(fileInfo.modifiedAt());
-              mdFileRepository.save(entity);
-
-              log.info("Inserted new file with ID: {} and Name: {}", entity.getFileId(), entity.getFileName());
-
-              // 6. Add to processed data list
-              processedData.add(new ProcessedDataList(entity.getFileId(), entity.getFileName()));
-            }
-          } catch (DataIntegrityViolationException | ConstraintViolationException e) {
-            log.error("Duplicate fileId encountered for file: {}", fileInfo.fileName());
-            throw new IllegalStateException("Error occurred while uploading files", e);
-          }
-        });
+            });
     return processedData;
   }
 
@@ -110,7 +123,8 @@ public class MdFileAndImageServiceImpl implements MdFileAndImageService{
 
       // 3. Process each file
       fileLists.fileLists().stream()
-          .filter(fileInfo -> !driveUtils.isMdFile(fileInfo.fileName())) // Filter out Markdown files
+          .filter(
+              fileInfo -> !driveUtils.isMdFile(fileInfo.fileName())) // Filter out Markdown files
           .forEach(fileInfo -> processFile(driveService, fileInfo, processedData));
 
       return processedData;
@@ -123,7 +137,9 @@ public class MdFileAndImageServiceImpl implements MdFileAndImageService{
   @Override
   public ImageLists getNewImagesInfo() {
     // 1. Fetch new images from the database using Query DSL
-    return pastedImageQRepository.findNewImages(get24HoursAgo()).orElse(new ImageLists(new ArrayList<>()));
+    return pastedImageQRepository
+        .findNewImages(get24HoursAgo())
+        .orElse(new ImageLists(new ArrayList<>()));
   }
 
   @Override
@@ -139,10 +155,12 @@ public class MdFileAndImageServiceImpl implements MdFileAndImageService{
     }
   }
 
-  private void processFile(Drive driveService, FileInfo fileInfo, List<ProcessedDataList> processedData) {
+  private void processFile(
+      Drive driveService, FileInfo fileInfo, List<ProcessedDataList> processedData) {
     try {
       // 1. Check if the image already exists
-      Optional<TbAttachedImages> existingImage = pastedImageQRepository.findByImageId(fileInfo.id());
+      Optional<TbAttachedImages> existingImage =
+          pastedImageQRepository.findByImageId(fileInfo.id());
 
       if (existingImage.isEmpty()) {
         // 2. Create a new image record
@@ -152,7 +170,11 @@ public class MdFileAndImageServiceImpl implements MdFileAndImageService{
         entity.setImageFilePath(driveUtils.findFilePathById(driveService, fileInfo.id()));
         entity.setCreatedAt(fileInfo.createdAt());
         pastedImageRepository.save(entity);
-        log.info("Inserted new image with ID: {}, Name: {}, Path: {}", entity.getImageId(), entity.getImageName(), entity.getImageFilePath());
+        log.info(
+            "Inserted new image with ID: {}, Name: {}, Path: {}",
+            entity.getImageId(),
+            entity.getImageName(),
+            entity.getImageFilePath());
 
         // 3. Add to processed data list
         processedData.add(new ProcessedDataList(entity.getImageId(), entity.getImageName()));
@@ -161,7 +183,10 @@ public class MdFileAndImageServiceImpl implements MdFileAndImageService{
       log.error("Duplicate imageId encountered for image: {}", fileInfo.fileName());
       throw new IllegalStateException("Error occurred while uploading images", e);
     } catch (IOException e) {
-      log.error("Error occurred while fetching file path from Google Drive for image: {}", fileInfo.fileName(), e);
+      log.error(
+          "Error occurred while fetching file path from Google Drive for image: {}",
+          fileInfo.fileName(),
+          e);
       throw new RuntimeException(e);
     }
   }

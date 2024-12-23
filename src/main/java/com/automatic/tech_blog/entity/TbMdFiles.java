@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import java.util.Date;
 import lombok.Data;
 
-
 @Entity
 @Table(name = "tb_md_files")
 @Data
@@ -28,4 +27,3 @@ public class TbMdFiles {
   @Column(name = "deleted_at", nullable = true)
   private Date deletedAt;
 }
-

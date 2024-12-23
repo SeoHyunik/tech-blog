@@ -9,18 +9,17 @@ import com.automatic.tech_blog.enums.SecuritySpecs;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.io.IOException;
+import java.math.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import java.io.IOException;
-import java.math.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @Service
 @Slf4j
@@ -48,14 +47,13 @@ public class TokenUtils {
       }
     }
 
-    if (modelPolicy == null)
-      throw new IllegalArgumentException("Model not found in the policy");
+    if (modelPolicy == null) throw new IllegalArgumentException("Model not found in the policy");
 
     // Extract prices from the model's token price information
-    BigDecimal inputPricePer1000Tokens = modelPolicy.getAsJsonObject("input_token_price")
-        .get("per_1000_tokens").getAsBigDecimal();
-    BigDecimal outputPricePer1000Tokens = modelPolicy.getAsJsonObject("output_token_price")
-        .get("per_1000_tokens").getAsBigDecimal();
+    BigDecimal inputPricePer1000Tokens =
+        modelPolicy.getAsJsonObject("input_token_price").get("per_1000_tokens").getAsBigDecimal();
+    BigDecimal outputPricePer1000Tokens =
+        modelPolicy.getAsJsonObject("output_token_price").get("per_1000_tokens").getAsBigDecimal();
 
     // 3. Calculate USD for input and output tokens
     MathContext mc = new MathContext(4);
@@ -78,7 +76,12 @@ public class TokenUtils {
     log.info("Converted KRW: {}", convertedKrw);
 
     // 6. Return the TokenUsageInfo record
-    return new TokenUsageInfo(fileId, openAiResponse.inputTokens(), openAiResponse.outputTokens(), convertedKrw, openAiResponse.model());
+    return new TokenUsageInfo(
+        fileId,
+        openAiResponse.inputTokens(),
+        openAiResponse.outputTokens(),
+        convertedKrw,
+        openAiResponse.model());
   }
 
   private JsonArray loadTokenPricePolicy() {
@@ -103,7 +106,8 @@ public class TokenUtils {
       // 1. Get the Exchange-rate API Key
       String apiKey;
       try {
-        apiKey = SecurityUtils.decryptAuthFile(SecuritySpecs.EXCHANGE_RATE_API_KEY_FILE_PATH.getValue());
+        apiKey =
+            SecurityUtils.decryptAuthFile(SecuritySpecs.EXCHANGE_RATE_API_KEY_FILE_PATH.getValue());
       } catch (Exception e) {
         log.error("Error getting Exchange-rate API Key: {}", e.getMessage(), e);
         throw new IllegalStateException("Failed to get Exchange-rate API Key", e);
@@ -112,21 +116,17 @@ public class TokenUtils {
       String url = ExternalUrls.EXCHANGE_RATE_URI.getUrl().replace("{API_KEY}", apiKey);
 
       ExternalApiRequest request =
-          new ExternalApiRequest(
-              HttpMethod.GET,
-              new HttpHeaders(),
-              url,
-              null
-          );
+          new ExternalApiRequest(HttpMethod.GET, new HttpHeaders(), url, null);
 
       // 3. Call the API using the existing callAPI method
       ResponseEntity<String> response = apiUtils.callAPI(request);
-      if(response == null || response.getBody() == null)
+      if (response == null || response.getBody() == null)
         throw new IllegalStateException("Exchange rate API response is null");
 
       // 4. Parse the response body to get the KRW conversion rate
       JsonObject jsonResponse = JsonParser.parseString(response.getBody()).getAsJsonObject();
-      BigDecimal exchangeRate = jsonResponse.getAsJsonObject("conversion_rates").get("KRW").getAsBigDecimal();
+      BigDecimal exchangeRate =
+          jsonResponse.getAsJsonObject("conversion_rates").get("KRW").getAsBigDecimal();
       log.info("Exchange rate from USD to KRW: {}", exchangeRate);
 
       // 5. Convert USD to KRW

@@ -102,7 +102,9 @@ public class ArticleUtils {
     // 4. Process tables
     for (Element table : document.select("table")) {
       // 4-1. Set table styles
-      table.attr("style", "background-color: #f2f2ea; border-collapse: collapse; border: 1px solid #041979; border-radius: 5px;");
+      table.attr(
+          "style",
+          "background-color: #f2f2ea; border-collapse: collapse; border: 1px solid #041979; border-radius: 5px;");
 
       // 4-2. Process rows
       Elements rows = table.select("tr");
@@ -112,7 +114,9 @@ public class ArticleUtils {
         // Apply different styles for the first row
         if (i == 0) {
           for (Element cell : row.select("th, td")) {
-            cell.attr("style", "border: 1px solid #041979; padding: 8px; white-space: nowrap; font-weight: bold;");
+            cell.attr(
+                "style",
+                "border: 1px solid #041979; padding: 8px; white-space: nowrap; font-weight: bold;");
           }
         } else {
           // Default styles for other rows

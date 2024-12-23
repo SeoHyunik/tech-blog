@@ -27,27 +27,23 @@ public class WordPressController {
   @PostMapping("/post-articles")
   @ResponseStatus(HttpStatus.CREATED)
   public Mono<ApiResponse> postArticles(@RequestBody @Valid FileLists fileLists) {
-    return wpService.postArticlesToBlog(fileLists)
+    return wpService
+        .postArticlesToBlog(fileLists)
         .collectList()
-        .map(processedDataList -> new ApiResponse(
-            HttpStatus.CREATED.value(),
-            processedDataList,
-            new Date(),
-            true
-        ));
+        .map(
+            processedDataList ->
+                new ApiResponse(HttpStatus.CREATED.value(), processedDataList, new Date(), true));
   }
 
   /*TODO : Upload images to WordPress media library*/
   @PostMapping("/upload-images")
   @ResponseStatus(HttpStatus.CREATED)
   public Mono<ApiResponse> uploadImages(@RequestBody @Valid ImageLists imageLists) {
-    return wpService.uploadImages(imageLists)
+    return wpService
+        .uploadImages(imageLists)
         .collectList()
-        .map(processedDataList -> new ApiResponse(
-            HttpStatus.CREATED.value(),
-            processedDataList,
-            new Date(),
-            true
-        ));
+        .map(
+            processedDataList ->
+                new ApiResponse(HttpStatus.CREATED.value(), processedDataList, new Date(), true));
   }
 }

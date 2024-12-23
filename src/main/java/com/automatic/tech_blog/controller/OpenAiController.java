@@ -27,13 +27,9 @@ public class OpenAiController {
   @ResponseStatus(HttpStatus.CREATED)
   public Mono<ApiResponse> editTechNotes(@RequestBody @Valid EditTechNotesRequest request) {
     // 1. Call the service and wrap the response in a Mono
-    return openAiService.editTechNotes(request)
+    return openAiService
+        .editTechNotes(request)
         .collectList()
-        .map(result -> new ApiResponse(
-            HttpStatus.CREATED.value(),
-            result,
-            new Date(),
-            true
-        ));
+        .map(result -> new ApiResponse(HttpStatus.CREATED.value(), result, new Date(), true));
   }
 }

@@ -32,15 +32,9 @@ public class MdFileAndImageController {
     log.info("Raw JSON Request Body: {}", requestBody);
     Object uploadResult = mdFileAndImageService.uploadFilesInfo(requestBody);
 
-    if (uploadResult == null)
-      throw new RuntimeException("Failed to upload files");
+    if (uploadResult == null) throw new RuntimeException("Failed to upload files");
 
-    return new ApiResponse(
-        HttpStatus.CREATED.value(),
-        uploadResult,
-        new Date(),
-        true
-    );
+    return new ApiResponse(HttpStatus.CREATED.value(), uploadResult, new Date(), true);
   }
 
   /*TODO : Return file lists that is newly made or modified*/
@@ -48,16 +42,14 @@ public class MdFileAndImageController {
   @ResponseStatus(HttpStatus.OK)
   public ApiResponse getNewFilesInfo() {
     return new ApiResponse(
-        HttpStatus.OK.value(),
-        mdFileAndImageService.getNewFilesInfo(),
-        new Date(),
-        true);
+        HttpStatus.OK.value(), mdFileAndImageService.getNewFilesInfo(), new Date(), true);
   }
 
   /*TODO : Upload pasted images into DB*/
   @PostMapping("/upload-images")
   @ResponseStatus(HttpStatus.CREATED)
-  public ApiResponse uploadImagesInfo(@RequestBody @Valid GoogleAuthInfo authInfo, @RequestBody @Valid FileLists fileLists) {
+  public ApiResponse uploadImagesInfo(
+      @RequestBody @Valid GoogleAuthInfo authInfo, @RequestBody @Valid FileLists fileLists) {
     return new ApiResponse(
         HttpStatus.CREATED.value(),
         mdFileAndImageService.uploadImagesInfo(authInfo, fileLists),
@@ -70,10 +62,7 @@ public class MdFileAndImageController {
   @ResponseStatus(HttpStatus.OK)
   public ApiResponse getNewImagesInfo() {
     return new ApiResponse(
-        HttpStatus.OK.value(),
-        mdFileAndImageService.getNewImagesInfo(),
-        new Date(),
-        true);
+        HttpStatus.OK.value(), mdFileAndImageService.getNewImagesInfo(), new Date(), true);
   }
 
   /*TODO : Update image info with image ID and URL*/

@@ -4,14 +4,13 @@ import com.automatic.tech_blog.dto.service.OAuthCredentials;
 import com.automatic.tech_blog.enums.SecuritySpecs;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.cdimascio.dotenv.Dotenv;
-
+import java.io.File;
+import java.nio.file.Files;
+import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.File;
-import java.nio.file.Files;
-import java.util.Base64;
 
 public class SecurityUtils {
   private static final ObjectMapper objectMapper = new ObjectMapper();

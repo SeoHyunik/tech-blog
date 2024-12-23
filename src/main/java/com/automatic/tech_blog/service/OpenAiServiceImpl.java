@@ -20,15 +20,14 @@ import com.automatic.tech_blog.utils.TokenUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import java.util.Set;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Set;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -48,56 +47,66 @@ public class OpenAiServiceImpl implements OpenAiService {
     Set<String> existingHtmlFiles = FileUtils.getExistingHtmlFiles();
 
     // 2. Filter and process markdown files (Async Job)
-    return Flux.fromIterable( request.fileLists().fileLists())
-        .filter(mdFileInfo -> !existingHtmlFiles.contains(mdFileInfo.fileName().replace(".md", ".html")))
+    return Flux.fromIterable(request.fileLists().fileLists())
+        .filter(
+            mdFileInfo ->
+                !existingHtmlFiles.contains(mdFileInfo.fileName().replace(".md", ".html")))
         .flatMap(mdFileInfo -> processMarkdownFileAsync(mdFileInfo, request.googleAuthInfo()));
   }
 
-
-
-  private Mono<ProcessedDataList> processMarkdownFileAsync(FileInfo fileInfo, GoogleAuthInfo googleAuthInfo) {
+  private Mono<ProcessedDataList> processMarkdownFileAsync(
+      FileInfo fileInfo, GoogleAuthInfo googleAuthInfo) {
     return Mono.fromCallable(() -> googleDriveUtils.createDriveService(googleAuthInfo, "kiwijam"))
-        .flatMap(driveService -> Mono.fromCallable(() ->
-            googleDriveUtils.getFileContent(driveService, fileInfo.id(), googleAuthInfo)))
-        .flatMap(fileContent -> fileContent != null
-            ? transformMarkdownToHtml(fileContent, fileInfo.id(), fileInfo.fileName())
-            : Mono.fromRunnable(() -> log.info("File content is null for file ID: {}", fileInfo.id()))
-        );
+        .flatMap(
+            driveService ->
+                Mono.fromCallable(
+                    () ->
+                        googleDriveUtils.getFileContent(
+                            driveService, fileInfo.id(), googleAuthInfo)))
+        .flatMap(
+            fileContent ->
+                fileContent != null
+                    ? transformMarkdownToHtml(fileContent, fileInfo.id(), fileInfo.fileName())
+                    : Mono.fromRunnable(
+                        () -> log.info("File content is null for file ID: {}", fileInfo.id())));
   }
 
-  private Mono<ProcessedDataList> transformMarkdownToHtml(String markdownContent, String fileId, String fileName) {
-    return Mono.fromCallable(() -> {
-      // 1. Load the editor roles JSON
-      JsonObject roles = loadEditorRoles();
+  private Mono<ProcessedDataList> transformMarkdownToHtml(
+      String markdownContent, String fileId, String fileName) {
+    return Mono.fromCallable(
+        () -> {
+          // 1. Load the editor roles JSON
+          JsonObject roles = loadEditorRoles();
 
-      // 2. Create the prompt JSON
-      String prompt = createPrompt(roles, markdownContent);
+          // 2. Create the prompt JSON
+          String prompt = createPrompt(roles, markdownContent);
 
-      // 3. Get the OpenAI API key
-      String apiKey = SecurityUtils.decryptAuthFile(SecuritySpecs.OPEN_AI_SECRET_KEY_FILE_PATH.getValue());
+          // 3. Get the OpenAI API key
+          String apiKey =
+              SecurityUtils.decryptAuthFile(SecuritySpecs.OPEN_AI_SECRET_KEY_FILE_PATH.getValue());
 
-      // 4. Generate HTML content from the markdown
-      OpenAiRequest openAiRequest = new OpenAiRequest(prompt, apiKey);
-      OpenAiResponse openAiResponse = openAiUtils.generateHtmlFromMarkdown(openAiRequest);
-      String content = openAiResponse.content();
+          // 4. Generate HTML content from the markdown
+          OpenAiRequest openAiRequest = new OpenAiRequest(prompt, apiKey);
+          OpenAiResponse openAiResponse = openAiUtils.generateHtmlFromMarkdown(openAiRequest);
+          String content = openAiResponse.content();
 
-      // 5. Edit image tags in the HTML content
-      content = articleUtils.editImageTags(content);
+          // 5. Edit image tags in the HTML content
+          content = articleUtils.editImageTags(content);
 
-      // 6. Edit link tags in the HTML content
-      content = articleUtils.editLinkTags(content);
+          // 6. Edit link tags in the HTML content
+          content = articleUtils.editLinkTags(content);
 
-      // 7. Edit overall HTML structure
-      content = articleUtils.editHtmlStructure(content);
+          // 7. Edit overall HTML structure
+          content = articleUtils.editHtmlStructure(content);
 
-      // 8. Save the HTML content to a local file
-      saveHtmlToLocal(content, fileName);
+          // 8. Save the HTML content to a local file
+          saveHtmlToLocal(content, fileName);
 
-      // 9. Save token usage to the database
-      insertTokenUsage(tokenUtils.getTokenUsageInfo(openAiResponse, fileId));
+          // 9. Save token usage to the database
+          insertTokenUsage(tokenUtils.getTokenUsageInfo(openAiResponse, fileId));
 
-      return new ProcessedDataList(fileId, fileName);
-    });
+          return new ProcessedDataList(fileId, fileName);
+        });
   }
 
   private void insertTokenUsage(TokenUsageInfo tokenUsageInfo) {
@@ -146,7 +155,8 @@ public class OpenAiServiceImpl implements OpenAiService {
       log.error("Failed to load editor roles from {}", InternalPaths.EDITOR_ROLES.getPath(), e);
       throw new IllegalStateException("Failed to load editor roles", e);
     } catch (Exception e) {
-      log.error("Failed to parse editor roles JSON from {}", InternalPaths.EDITOR_ROLES.getPath(), e);
+      log.error(
+          "Failed to parse editor roles JSON from {}", InternalPaths.EDITOR_ROLES.getPath(), e);
       throw new IllegalStateException("Invalid JSON format in editor roles", e);
     }
   }
@@ -155,8 +165,7 @@ public class OpenAiServiceImpl implements OpenAiService {
     try {
       // 1. Ensure the directory exists
       Path outputDir = Paths.get(InternalPaths.HTML_SAVE_DIR.getPath());
-      if (!Files.exists(outputDir))
-        Files.createDirectories(outputDir);
+      if (!Files.exists(outputDir)) Files.createDirectories(outputDir);
 
       // 2. Generate the full file path
       String sanitizedFileName = fileName.replace(".md", ".html");
@@ -177,5 +186,4 @@ public class OpenAiServiceImpl implements OpenAiService {
       throw new IllegalStateException("Failed to save HTML file locally", e);
     }
   }
-
 }

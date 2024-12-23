@@ -6,4 +6,3 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MdFileRepository extends JpaRepository<TbMdFiles, Long> {}
-

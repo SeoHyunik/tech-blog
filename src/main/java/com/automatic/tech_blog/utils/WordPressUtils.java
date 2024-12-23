@@ -3,7 +3,6 @@ package com.automatic.tech_blog.utils;
 import com.automatic.tech_blog.dto.request.ExternalApiRequest;
 import com.automatic.tech_blog.enums.ExternalUrls;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.util.ArrayList;
@@ -25,27 +24,21 @@ public class WordPressUtils {
   public String getWordPressToken(String password) {
     try {
       // 1. Build URL with query string
-      String urlWithQuery = String.format(
-          "%s/token?username=%s&password=%s",
-          ExternalUrls.WORD_PRESS_KIWIJAM_V1.getUrl(),
-          USER_NAME,
-          password
-      );
+      String urlWithQuery =
+          String.format(
+              "%s/token?username=%s&password=%s",
+              ExternalUrls.WORD_PRESS_KIWIJAM_V1.getUrl(), USER_NAME, password);
 
       // 2. Build WordPress API request with query string
       HttpHeaders headers = new HttpHeaders();
       headers.set("Content-Type", "application/json");
 
-      ExternalApiRequest tokenRequest = new ExternalApiRequest(
-          HttpMethod.POST,
-          headers,
-          urlWithQuery,
-          null
-      );
+      ExternalApiRequest tokenRequest =
+          new ExternalApiRequest(HttpMethod.POST, headers, urlWithQuery, null);
 
       // 3. Call the API and parse the response to get jwt_token
       ResponseEntity<String> tokenResponse = apiUtils.callAPI(tokenRequest);
-      if(tokenResponse == null || tokenResponse.getBody() == null)
+      if (tokenResponse == null || tokenResponse.getBody() == null)
         throw new IllegalStateException("Token response is null");
 
       // 4. Parse the response and check if token is present
@@ -66,22 +59,22 @@ public class WordPressUtils {
     HttpHeaders headers = new HttpHeaders();
     headers.set("Authorization", "Bearer " + jwtToken);
 
-    ExternalApiRequest validateRequest = new ExternalApiRequest(
-        HttpMethod.GET,
-        headers,
-        ExternalUrls.WORD_PRESS_KIWIJAM_V1.getUrl() + "/token-validate",
-        null
-    );
+    ExternalApiRequest validateRequest =
+        new ExternalApiRequest(
+            HttpMethod.GET,
+            headers,
+            ExternalUrls.WORD_PRESS_KIWIJAM_V1.getUrl() + "/token-validate",
+            null);
 
     // 2. Call the API and validate the response
-    ResponseEntity<String>  validateResponse = apiUtils.callAPI(validateRequest);
-    if(validateResponse == null || validateResponse.getBody() == null)
+    ResponseEntity<String> validateResponse = apiUtils.callAPI(validateRequest);
+    if (validateResponse == null || validateResponse.getBody() == null)
       throw new IllegalStateException("Token validation response is null");
 
     // 3. Parse the response and check status and message
     JsonObject validateJson = JsonParser.parseString(validateResponse.getBody()).getAsJsonObject();
-    if (!"TRUE".equals(validateJson.get("status").getAsString()) ||
-        !"VALID_TOKEN".equals(validateJson.get("message").getAsString()))
+    if (!"TRUE".equals(validateJson.get("status").getAsString())
+        || !"VALID_TOKEN".equals(validateJson.get("message").getAsString()))
       throw new IllegalStateException("Invalid WordPress token");
 
     log.info("WordPress token validated successfully");
@@ -93,12 +86,12 @@ public class WordPressUtils {
       HttpHeaders headers = new HttpHeaders();
       headers.set("Authorization", "Bearer " + jwtToken);
 
-      ExternalApiRequest getPostsRequest = new ExternalApiRequest(
-          HttpMethod.GET,
-          headers,
-          ExternalUrls.WORD_PRESS_KIWIJAM_V2.getUrl() + "/posts",
-          null
-      );
+      ExternalApiRequest getPostsRequest =
+          new ExternalApiRequest(
+              HttpMethod.GET,
+              headers,
+              ExternalUrls.WORD_PRESS_KIWIJAM_V2.getUrl() + "/posts",
+              null);
 
       // 2. Call the API and parse the response
       ResponseEntity<String> postsResponse = apiUtils.callAPI(getPostsRequest);
@@ -110,17 +103,17 @@ public class WordPressUtils {
       List<String> titles = new ArrayList<>();
       JsonArray postsArray = JsonParser.parseString(postsResponse.getBody()).getAsJsonArray();
 
-      postsArray.forEach(postElement -> {
-        JsonObject postObject = postElement.getAsJsonObject();
-        JsonObject titleObject = postObject.getAsJsonObject("title");
-        String renderedTitle = titleObject.get("rendered").getAsString();
-        titles.add(renderedTitle);
-      });
+      postsArray.forEach(
+          postElement -> {
+            JsonObject postObject = postElement.getAsJsonObject();
+            JsonObject titleObject = postObject.getAsJsonObject("title");
+            String renderedTitle = titleObject.get("rendered").getAsString();
+            titles.add(renderedTitle);
+          });
       return titles;
     } catch (Exception e) {
       log.error("Failed to retrieve published article titles", e);
       throw new IllegalStateException("Error while fetching article titles", e);
     }
   }
-
 }

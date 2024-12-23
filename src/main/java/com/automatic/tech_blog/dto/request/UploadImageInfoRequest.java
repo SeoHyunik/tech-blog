@@ -9,4 +9,3 @@ public record UploadImageInfoRequest(
     @NotNull(message = "Image URL is required")
     @Pattern(regexp = "^(http|https)://.*", message = "Invalid URL format")
       String imageUrl) {}
-

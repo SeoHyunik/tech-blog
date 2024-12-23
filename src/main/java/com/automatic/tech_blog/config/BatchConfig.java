@@ -44,7 +44,6 @@ public class BatchConfig {
   private final OpenAiService openAiService;
   private final MdFileAndImageService mdFileAndImageService;
 
-
   @Bean
   public Job techBlogJob() {
     return new JobBuilder("techBlogJob", jobRepository)
@@ -61,7 +60,10 @@ public class BatchConfig {
             (contribution, chunkContext) -> {
               try {
                 // 1. Decrypt Google Auth Info
-                GoogleAuthInfo authInfo = new GoogleAuthInfo(SecurityUtils.decryptAuthFile(SecuritySpecs.GOOGLE_AUTH_FILE_PATH.getValue()));
+                GoogleAuthInfo authInfo =
+                    new GoogleAuthInfo(
+                        SecurityUtils.decryptAuthFile(
+                            SecuritySpecs.GOOGLE_AUTH_FILE_PATH.getValue()));
                 log.info("Decrypted Google Auth Info");
 
                 // 2. Scan Google Drive Files
@@ -69,11 +71,13 @@ public class BatchConfig {
                 log.info("Scanned Files: {}", fileLists);
 
                 // 3. Insert MD files info into DB
-                List<ProcessedDataList> mdFileResults = mdFileAndImageService.uploadFilesInfo(fileLists);
+                List<ProcessedDataList> mdFileResults =
+                    mdFileAndImageService.uploadFilesInfo(fileLists);
                 log.info("Inserted MD files into DB: {}", mdFileResults);
 
                 // 4. Insert Pasted Images info into DB
-                List<ProcessedDataList> imageResults = mdFileAndImageService.uploadImagesInfo(authInfo, fileLists);
+                List<ProcessedDataList> imageResults =
+                    mdFileAndImageService.uploadImagesInfo(authInfo, fileLists);
                 log.info("Inserted Pasted Images into DB: {}", imageResults);
 
               } catch (Exception e) {
@@ -83,100 +87,127 @@ public class BatchConfig {
 
               return RepeatStatus.FINISHED;
             },
-            transactionManager
-        )
+            transactionManager)
         .build();
   }
 
   @Bean
   public Step step2_uploadImagesToWordPressLibrary() {
     return new StepBuilder("step2_uploadImagesToWordPressLibrary", jobRepository)
-        .tasklet((contribution, chunkContext) -> {
-          try {
-            // 1. Get newly uploaded images from DB
-            ImageLists imageLists = mdFileAndImageService.getNewImagesInfo();
-            log.info("Retrieved imageLists from getNewImagesInfo: {}", imageLists);
+        .tasklet(
+            (contribution, chunkContext) -> {
+              try {
+                // 1. Get newly uploaded images from DB
+                ImageLists imageLists = mdFileAndImageService.getNewImagesInfo();
+                log.info("Retrieved imageLists from getNewImagesInfo: {}", imageLists);
 
-            if (!imageLists.imageLists().isEmpty()) {
-              // 2. Upload images to WordPress
-              Flux<ProcessedDataList> uploadImagesResponse = wordpressService.uploadImages(imageLists);
+                if (!imageLists.imageLists().isEmpty()) {
+                  // 2. Upload images to WordPress
+                  Flux<ProcessedDataList> uploadImagesResponse =
+                      wordpressService.uploadImages(imageLists);
 
-              // 3. Update images info in DB
-              Mono<List<ProcessedDataList>> processedDataListMono = uploadImagesResponse.collectList();
-              processedDataListMono.blockOptional().ifPresent(processedDataLists
-                  -> processedDataLists.forEach(data -> {
-                mdFileAndImageService.updateImageInfo(data.id(), data.name());
-                log.info("Updated image info in DB for image ID: {}", data.id());
-              }));
-            } else {
-              log.info("No images to be uploaded to WordPress.");
-            }
-          } catch (Exception e) {
-            log.error("Error occurred during image upload to WordPress", e);
-            throw new RuntimeException("Failed to upload images to WordPress", e);
-          }
-          return RepeatStatus.FINISHED;
-        }, transactionManager)
+                  // 3. Update images info in DB
+                  Mono<List<ProcessedDataList>> processedDataListMono =
+                      uploadImagesResponse.collectList();
+                  processedDataListMono
+                      .blockOptional()
+                      .ifPresent(
+                          processedDataLists ->
+                              processedDataLists.forEach(
+                                  data -> {
+                                    mdFileAndImageService.updateImageInfo(data.id(), data.name());
+                                    log.info(
+                                        "Updated image info in DB for image ID: {}", data.id());
+                                  }));
+                } else {
+                  log.info("No images to be uploaded to WordPress.");
+                }
+              } catch (Exception e) {
+                log.error("Error occurred during image upload to WordPress", e);
+                throw new RuntimeException("Failed to upload images to WordPress", e);
+              }
+              return RepeatStatus.FINISHED;
+            },
+            transactionManager)
         .build();
   }
 
   @Bean
   public Step step3_editTechNotesAndUploadToWordPress() {
     return new StepBuilder("step3_editTechNotesAndUploadToWordPress", jobRepository)
-        .tasklet((contribution, chunkContext) -> {
-          try {
-            // 1. Get new files from Google Drive
-            FileLists newFiles = mdFileAndImageService.getNewFilesInfo();
-            log.info("Retrieved newFiles from getNewFilesInfo: {}", newFiles);
+        .tasklet(
+            (contribution, chunkContext) -> {
+              try {
+                // 1. Get new files from Google Drive
+                FileLists newFiles = mdFileAndImageService.getNewFilesInfo();
+                log.info("Retrieved newFiles from getNewFilesInfo: {}", newFiles);
 
-            if (!newFiles.fileLists().isEmpty()) {
-              // 2. Decrypt Google Auth Info
-              GoogleAuthInfo authInfo = new GoogleAuthInfo(SecurityUtils.decryptAuthFile(SecuritySpecs.GOOGLE_AUTH_FILE_PATH.getValue()));
-              log.info("Decrypted Google Auth Info");
+                if (!newFiles.fileLists().isEmpty()) {
+                  // 2. Decrypt Google Auth Info
+                  GoogleAuthInfo authInfo =
+                      new GoogleAuthInfo(
+                          SecurityUtils.decryptAuthFile(
+                              SecuritySpecs.GOOGLE_AUTH_FILE_PATH.getValue()));
+                  log.info("Decrypted Google Auth Info");
 
-              // 3. Edit tech notes
-              EditTechNotesRequest editTechNotesRequest = new EditTechNotesRequest(authInfo, newFiles);
-              List<ProcessedDataList> processedDataLists = Optional.ofNullable(
-                  openAiService.editTechNotes(editTechNotesRequest)
-                      .collectList()
-                      .block()
-              ).orElse(Collections.emptyList());
+                  // 3. Edit tech notes
+                  EditTechNotesRequest editTechNotesRequest =
+                      new EditTechNotesRequest(authInfo, newFiles);
+                  List<ProcessedDataList> processedDataLists =
+                      Optional.ofNullable(
+                              openAiService
+                                  .editTechNotes(editTechNotesRequest)
+                                  .collectList()
+                                  .block())
+                          .orElse(Collections.emptyList());
 
-              if (processedDataLists.isEmpty()) {
-                log.warn("No processed tech notes returned from OpenAI service.");
-                return RepeatStatus.FINISHED;
+                  if (processedDataLists.isEmpty()) {
+                    log.warn("No processed tech notes returned from OpenAI service.");
+                    return RepeatStatus.FINISHED;
+                  }
+
+                  // 4. Compare id of FileLists and processedDataLists
+                  Set<String> processedIds =
+                      processedDataLists.stream()
+                          .map(ProcessedDataList::id) // Get the ID of each ProcessedDataList
+                          .collect(Collectors.toSet());
+
+                  // 5. Filter newFiles to include only files that exist in processedDataLists
+                  List<FileInfo> filteredFiles =
+                      newFiles.fileLists().stream()
+                          .filter(file -> processedIds.contains(file.id()))
+                          .collect(Collectors.toList());
+                  log.info("Filtered files for upload: {}", filteredFiles);
+
+                  // 6. Post articles to WordPress
+                  if (!filteredFiles.isEmpty()) {
+                    FileLists filteredFileLists = new FileLists(filteredFiles);
+
+                    Mono<List<ProcessedDataList>> uploadedFileListMono =
+                        wordpressService.postArticlesToBlog(filteredFileLists).collectList();
+
+                    uploadedFileListMono
+                        .blockOptional()
+                        .ifPresent(
+                            uploadedFileLists ->
+                                uploadedFileLists.forEach(
+                                    data ->
+                                        log.info(
+                                            "Uploaded File -> ID: {}, Name: {}",
+                                            data.id(),
+                                            data.name())));
+                  } else {
+                    log.info("No files to be uploaded to WordPress.");
+                    return RepeatStatus.FINISHED;
+                  }
+                }
+              } catch (Exception e) {
+                log.error("Error occurred during article upload to WordPress", e);
+                throw new RuntimeException("Failed to upload articles to WordPress", e);
               }
-
-              // 4. Compare id of FileLists and processedDataLists
-              Set<String> processedIds = processedDataLists.stream()
-                  .map(ProcessedDataList::id) // Get the ID of each ProcessedDataList
-                  .collect(Collectors.toSet());
-
-              // 5. Filter newFiles to include only files that exist in processedDataLists
-              List<FileInfo> filteredFiles = newFiles.fileLists().stream()
-                  .filter(file -> processedIds.contains(file.id()))
-                  .collect(Collectors.toList());
-              log.info("Filtered files for upload: {}", filteredFiles);
-
-              // 6. Post articles to WordPress
-              if (!filteredFiles.isEmpty()) {
-                FileLists filteredFileLists = new FileLists(filteredFiles);
-
-                Mono<List<ProcessedDataList>> uploadedFileListMono = wordpressService.postArticlesToBlog(filteredFileLists).collectList();
-
-                uploadedFileListMono.blockOptional().ifPresent(uploadedFileLists
-                    -> uploadedFileLists.forEach(data -> log.info("Uploaded File -> ID: {}, Name: {}", data.id(), data.name())));
-              } else {
-                log.info("No files to be uploaded to WordPress.");
-                return RepeatStatus.FINISHED;
-              }
-            }
-          } catch (Exception e) {
-            log.error("Error occurred during article upload to WordPress", e);
-            throw new RuntimeException("Failed to upload articles to WordPress", e);
-          }
-          return RepeatStatus.FINISHED;
-        }, transactionManager)
+              return RepeatStatus.FINISHED;
+            },
+            transactionManager)
         .build();
   }
 }

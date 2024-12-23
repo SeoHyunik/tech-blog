@@ -8,8 +8,12 @@ import java.util.List;
 
 public interface MdFileAndImageService {
   List<ProcessedDataList> uploadFilesInfo(FileLists fileLists);
+
   FileLists getNewFilesInfo();
+
   List<ProcessedDataList> uploadImagesInfo(GoogleAuthInfo authInfo, FileLists fileLists);
+
   ImageLists getNewImagesInfo();
+
   void updateImageInfo(String imageId, String imageUrl);
 }

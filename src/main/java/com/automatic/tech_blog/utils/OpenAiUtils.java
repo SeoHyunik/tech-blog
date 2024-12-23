@@ -32,8 +32,7 @@ public class OpenAiUtils {
       ResponseEntity<String> response = apiUtils.callAPI(externalApiRequest);
 
       // 3. Validate response
-      if (response.getBody() == null)
-        throw new IllegalStateException("API response body is null.");
+      if (response.getBody() == null) throw new IllegalStateException("API response body is null.");
 
       // 4. Parse the response body
       JsonObject jsonObject = JsonParser.parseString(response.getBody()).getAsJsonObject();
@@ -44,7 +43,8 @@ public class OpenAiUtils {
         throw new IllegalStateException("API response does not contain choices.");
 
       // 5-1. Extract the content from the first choice
-      String content = choices.get(0).getAsJsonObject().getAsJsonObject("message").get("content").getAsString();
+      String content =
+          choices.get(0).getAsJsonObject().getAsJsonObject("message").get("content").getAsString();
 
       // 5-2. Extract model information
       String model = jsonObject.get("model").getAsString();
@@ -57,7 +57,7 @@ public class OpenAiUtils {
       String finishReason = choices.get(0).getAsJsonObject().get("finish_reason").getAsString();
       if (!"stop".equals(finishReason)) {
         log.warn("Finish_reason is not 'stop'. Retrying...");
-        return generateHtmlFromMarkdown(openAiRequest);  // Recursively retry
+        return generateHtmlFromMarkdown(openAiRequest); // Recursively retry
       }
 
       // 7. Return the OpenAiResponse with the collected data
@@ -71,7 +71,6 @@ public class OpenAiUtils {
       throw new IllegalStateException("Failed to generate HTML from Markdown", e);
     }
   }
-
 
   private ExternalApiRequest buildApiRequest(OpenAiRequest openAiRequest) {
     // 1. Set HTTP headers

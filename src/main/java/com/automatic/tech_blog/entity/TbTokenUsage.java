@@ -24,8 +24,7 @@ public class TbTokenUsage {
   @Column(nullable = false)
   private BigDecimal convertedKrw;
 
-  @Column
-  private BigDecimal profitKrw;
+  @Column private BigDecimal profitKrw;
 
   @Column(nullable = false)
   private String model;
