@@ -86,6 +86,7 @@ public class GoogleAuthUtils {
             new File(
                 SecuritySpecs.TOKENS_DIRECTORY_PATH.getValue()
                     + SecuritySpecs.TOKEN_FILE_NAME.getValue());
+
         if (storedCredentialFile.exists() && storedCredentialFile.delete())
           log.info("StoredCredential file deleted successfully.");
 

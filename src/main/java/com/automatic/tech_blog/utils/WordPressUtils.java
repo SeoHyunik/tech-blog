@@ -95,9 +95,8 @@ public class WordPressUtils {
 
       // 2. Call the API and parse the response
       ResponseEntity<String> postsResponse = apiUtils.callAPI(getPostsRequest);
-      if (postsResponse == null || postsResponse.getBody() == null) {
+      if (postsResponse == null || postsResponse.getBody() == null)
         throw new IllegalStateException("Failed to retrieve posts: Response is null");
-      }
 
       // 3. Parse the response to extract titles
       List<String> titles = new ArrayList<>();
