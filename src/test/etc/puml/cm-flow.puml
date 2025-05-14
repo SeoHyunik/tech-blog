@@ -1,0 +1,56 @@
+@startuml
+skinparam minClassWidth 100
+skinparam ParticipantPadding 20
+
+actor actor
+participant console_api as "console-api"
+participant portal_api as "portal-api"
+participant GSLB as "GSLB (to-be NSM)" #yellow
+database DB as "Portal DB"
+
+||20||
+activate actor
+
+group GSLB 기능 처리 흐름
+
+== GSLB Server 생성 ==
+  actor -> console_api : GSLB Server 생성
+  console_api -> portal_api : GSLB Server 생성
+  portal_api -> GSLB : GSLB Server 생성
+  portal_api <- GSLB : GSLB Server 생성
+  console_api <- portal_api : GSLB Server 생성 완료
+  actor <- console_api : GSLB Server 생성 완료
+
+== GSLB Server 삭제 ==
+' 구현 필요 시 여기에 추가
+
+== GSLB Server 상태 조회 ==
+' 구현 필요 시 여기에 추가
+
+== GSLB Server List 조회 ==
+  actor -> console_api : GSLB Server List 조회
+  console_api -> portal_api : GSLB Server List 조회
+  portal_api -> DB : GSLB Server List 조회
+  portal_api <- DB : GSLB Server List 조회
+  console_api <- portal_api : GSLB Server List 조회 완료
+  actor <- console_api : GSLB Server List 조회 완료
+
+== GSLB IP(service) 생성 ==
+' 구현 필요 시 여기에 추가
+
+== GSLB IP(service) 삭제 ==
+' 구현 필요 시 여기에 추가
+
+== GSLB IP(service) 상태 조회 ==
+' 구현 필요 시 여기에 추가
+
+== GSLB IP(service) List 조회 ==
+' 구현 필요 시 여기에 추가
+
+== GSLB IP(service) 업데이트 ==
+' 구현 필요 시 여기에 추가
+
+end
+
+deactivate actor
+@enduml

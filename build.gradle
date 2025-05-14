@@ -1,139 +1,143 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.3.5'
-	id 'io.spring.dependency-management' version '1.1.6'
-	id 'org.asciidoctor.jvm.convert' version '3.3.2'
+    id 'java'
+    id 'org.springframework.boot' version '3.3.5'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'org.asciidoctor.jvm.convert' version '3.3.2'
 }
 
 group = 'com.automatic'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 ext {
-	set('snippetsDir', file("build/generated-snippets"))
+    set('snippetsDir', file("build/generated-snippets"))
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-batch'
-	implementation 'org.springframework.batch:spring-batch-core:5.0.2'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	implementation 'org.springframework.security:spring-security-config:6.3.4'
-	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client:3.3.5'
-	compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'io.projectreactor:reactor-test'
-	testImplementation 'org.springframework.batch:spring-batch-test'
-	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    implementation 'org.springframework.boot:spring-boot-starter-batch'
+    implementation 'org.springframework.batch:spring-batch-core:5.0.2'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.security:spring-security-config:6.3.4'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client:3.3.5'
+    implementation 'org.projectlombok:lombok:1.18.30'
+    compileOnly 'org.projectlombok:lombok'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
+    testImplementation 'org.springframework.batch:spring-batch-test'
+    testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-	// Google Drive API
-	implementation group: 'com.google.api-client', name: 'google-api-client', version: '1.32.1'
-	implementation group: 'com.google.oauth-client', name: 'google-oauth-client', version: '1.36.0'
-	implementation group: 'com.google.oauth-client', name: 'google-oauth-client-jetty', version: '1.36.0'
-	implementation group: 'com.google.http-client', name: 'google-http-client-gson', version: '1.45.0'
-	implementation 'com.google.apis:google-api-services-drive:v3-rev197-1.25.0'
-	implementation 'com.google.auth:google-auth-library-oauth2-http:1.29.0'
+    // Google Drive API
+    implementation group: 'com.google.api-client', name: 'google-api-client', version: '1.32.1'
+    implementation group: 'com.google.oauth-client', name: 'google-oauth-client', version: '1.36.0'
+    implementation group: 'com.google.oauth-client', name: 'google-oauth-client-jetty', version: '1.36.0'
+    implementation group: 'com.google.http-client', name: 'google-http-client-gson', version: '1.45.0'
+    implementation 'com.google.apis:google-api-services-drive:v3-rev197-1.25.0'
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.29.0'
 
-	// OpenAI API와의 HTTP 요청 처리
-	implementation 'org.springframework.boot:spring-boot-starter-webflux' // WebClient 사용
+    // OpenAI API와의 HTTP 요청 처리
+    implementation 'org.springframework.boot:spring-boot-starter-webflux' // WebClient 사용
 
-	// 유틸리티 및 관리 라이브러리
-	implementation 'org.projectlombok:lombok'
-	implementation 'com.fasterxml.jackson.core:jackson-databind'
+    // 유틸리티 및 관리 라이브러리
+    implementation 'org.projectlombok:lombok'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
 
-	// MySQL 연동
-	implementation 'mysql:mysql-connector-java:8.0.33'
+    // MySQL 연동
+    implementation 'mysql:mysql-connector-java:8.0.33'
 
-	// Jacatra
-	implementation group: 'jakarta.validation', name: 'jakarta.validation-api', version: '3.1.0'
+    // Jacatra
+    implementation group: 'jakarta.validation', name: 'jakarta.validation-api', version: '3.1.0'
 
-	//Querydsl 추가
-	implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
-	annotationProcessor "com.querydsl:querydsl-apt:${dependencyManagement.importedProperties['querydsl.version']}:jakarta"
-	annotationProcessor "jakarta.annotation:jakarta.annotation-api"
-	annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+    //Querydsl 추가
+    implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
+    annotationProcessor "com.querydsl:querydsl-apt:${dependencyManagement.importedProperties['querydsl.version']}:jakarta"
+    annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+    annotationProcessor "jakarta.persistence:jakarta.persistence-api"
 
-	// Security
-	implementation group: 'io.github.cdimascio', name: 'java-dotenv', version: '5.2.2'
+    // Security
+    implementation group: 'io.github.cdimascio', name: 'java-dotenv', version: '5.2.2'
 
-	// Jsoup
-	implementation group: 'org.jsoup', name: 'jsoup', version: '1.18.3'
+    // Jsoup
+    implementation group: 'org.jsoup', name: 'jsoup', version: '1.18.3'
+
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.70'   // BouncyCastle Provider (Crypto 기능)
+    implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'  // BouncyCastle PKIX (PEM 파싱 기능)
 }
 
 tasks.named('test') {
-	outputs.dir snippetsDir
-	useJUnitPlatform()
+    outputs.dir snippetsDir
+    useJUnitPlatform()
 }
 
 tasks.withType(Test) {
-	enabled = false
+    enabled = false
 }
 
 tasks.named('clean') {
-	doFirst {
-		def buildDir = file("${project.buildDir}")
-		if (buildDir.exists()) {
-			println "Deleting build directory: ${buildDir}"
-			buildDir.deleteDir()
-		}
-	}
+    doFirst {
+        def buildDir = file("${project.buildDir}")
+        if (buildDir.exists()) {
+            println "Deleting build directory: ${buildDir}"
+            buildDir.deleteDir()
+        }
+    }
 }
 
 // Querydsl 추가
 clean {
-	delete file('build/generated/querydsl')
+    delete file('build/generated/querydsl')
 }
 
 def querydslDir = "$buildDir/generated/querydsl"
 
 sourceSets {
-	main {
-		java {
-			srcDirs += querydslDir
-		}
-	}
+    main {
+        java {
+            srcDirs += querydslDir
+        }
+    }
 }
 
 tasks.withType(JavaCompile) {
-	options.annotationProcessorGeneratedSourcesDirectory = file(querydslDir)
-	doFirst {
-		println "Ensuring QueryDSL directory exists: $querydslDir"
-		file(querydslDir).mkdirs()
-	}
+    options.annotationProcessorGeneratedSourcesDirectory = file(querydslDir)
+    doFirst {
+        println "Ensuring QueryDSL directory exists: $querydslDir"
+        file(querydslDir).mkdirs()
+    }
 }
 
 tasks.withType(JavaCompile) {
-	options.annotationProcessorGeneratedSourcesDirectory = file(querydslDir)
+    options.annotationProcessorGeneratedSourcesDirectory = file(querydslDir)
 }
 
 clean.doLast {
-	file(querydslDir).deleteDir()
+    file(querydslDir).deleteDir()
 }
 
 tasks.named('asciidoctor') {
-	inputs.dir snippetsDir
-	dependsOn test
+    inputs.dir snippetsDir
+    dependsOn test
 }
 
 test {
-	jvmArgs '-XX:+EnableDynamicAgentLoading'
+    jvmArgs '-XX:+EnableDynamicAgentLoading'
 }
