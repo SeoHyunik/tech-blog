@@ -1,0 +1,247 @@
+@startuml
+skinparam minClassWidth 100
+skinparam ParticipantPadding 20
+
+actor actor
+participant console_api as "console-api"
+participant portal_api as "portal-api"
+participant GSLB as "GSLB (to-be NSM)" #yellow
+database DB as "Portal DB"
+||20||
+activate actor
+
+group GSLB 기능 처리 흐름
+
+== GSLB Server 생성 ==
+  actor -> console_api : GSLB Server 생성 요청
+  console_api -> portal_api : GSLB Server 생성 요청 전달
+  portal_api -> portal_api : 파라미터 유효성 검사\n(paramCheck)
+  portal_api -> DB : GSLB 서버명 중복 체크
+  DB --> portal_api : 중복 여부 반환
+
+  portal_api -> DB : TTL / Persistence 값 확인 및 세팅
+
+  portal_api -> DB : Billing 데이터 생성
+  DB --> portal_api : billSq 반환
+
+  portal_api -> GSLB : GSLB 로그인 요청
+  GSLB --> portal_api : 인증 완료 (세션 획득)
+
+  portal_api -> DB : Active GSLB 서버 정보 저장
+  portal_api -> GSLB : Active GSLB 서버 생성 요청
+  GSLB --> portal_api : 생성 결과 응답
+
+  portal_api -> DB : Backup GSLB 서버 정보 저장
+  portal_api -> GSLB : Backup GSLB 서버 생성 요청
+  GSLB --> portal_api : 생성 결과 응답
+
+  portal_api -> GSLB : Active-Backup 서버 바인딩
+  GSLB --> portal_api : 바인딩 결과 응답
+
+  portal_api -> GSLB : 도메인 바인딩 요청
+  GSLB --> portal_api : 바인딩 결과 응답
+
+  portal_api -> GSLB : GSLB Config Sync 요청
+  GSLB --> portal_api : Sync 완료
+
+  portal_api -> DB : Active 서버 상태 변경 (REQ002)
+  portal_api -> DB : Backup 서버 상태 변경 (REQ002)
+
+  portal_api -> DB : Billing 상태 변경 (BILL002)
+
+  console_api <- portal_api : GSLB Server 생성 완료
+  actor <- console_api : GSLB Server 생성 완료
+
+== GSLB Server 삭제 ==
+  actor -> console_api : GSLB Server 삭제 요청
+  console_api -> portal_api : GSLB Server 삭제 요청 (svrSq 포함)
+
+  portal_api -> DB : Active/Backup GSLB 서버 정보 조회
+  DB --> portal_api : GSLB 서버 정보 반환
+
+  portal_api -> GSLB : GSLB 로그인 요청
+  GSLB --> portal_api : 인증 완료
+
+  portal_api -> GSLB : 도메인 바인딩 삭제 요청
+  GSLB --> portal_api : 바인딩 삭제 완료
+
+  portal_api -> GSLB : Active 서버 삭제 요청
+  GSLB --> portal_api : 삭제 완료
+
+  portal_api -> GSLB : Backup 서버 삭제 요청
+  GSLB --> portal_api : 삭제 완료
+
+  portal_api -> GSLB : GSLB Config Sync 요청
+  GSLB --> portal_api : Sync 완료
+
+  portal_api -> DB : Active 서버 상태 업데이트\n(delDttm, REQ006 등)
+  portal_api -> DB : Active 서버 IP 삭제
+
+  portal_api -> DB : Backup 서버 상태 업데이트\n(delDttm, REQ006 등)
+  portal_api -> DB : Backup 서버 IP 삭제
+
+  portal_api -> DB : Billing 종료 처리 (BILL005)
+
+  console_api <- portal_api : GSLB Server 삭제 완료
+  actor <- console_api : GSLB Server 삭제 완료
+
+== GSLB Server 상태 조회 ==
+  actor -> console_api : GSLB Server 상태 조회 요청
+  console_api -> portal_api : GSLB Server 상태 조회 요청 (svrSq 포함)
+
+  portal_api -> DB : Active GSLB 서버 정보 조회
+  DB --> portal_api : GSLB 서버 정보 반환
+
+  portal_api -> GSLB : GSLB 로그인 요청
+  GSLB --> portal_api : 인증 완료
+
+  portal_api -> GSLB : GSLB 서버 상태 조회 요청
+  GSLB --> portal_api : GSLB 서버 상태 정보 반환
+
+  console_api <- portal_api : GSLB Server 상태 조회 결과 응답
+  actor <- console_api : GSLB Server 상태 조회 결과 응답
+
+== GSLB Server List 조회 ==
+  actor -> console_api : GSLB Server List 조회 요청
+  console_api -> portal_api : GSLB Server List 조회 요청
+
+  portal_api -> DB : GSLB 서버 목록 조회\n(memSq, ActiveYn = Y, DelDttm is null)
+  DB --> portal_api : GSLB 서버 목록 반환
+
+  portal_api -> portal_api : JSON Data 가공\n(svr_nm, domain_nm, ttl, persist_type)
+
+  console_api <- portal_api : GSLB Server List 응답 반환
+  actor <- console_api : GSLB Server List 응답
+
+== GSLB IP(service) 생성 ==
+  actor -> console_api : GSLB IP 생성 요청
+  console_api -> portal_api : GSLB IP 생성 요청 전달
+
+  portal_api -> portal_api : 파라미터 유효성 검사 및 update 여부 확인
+  portal_api -> DB : GSLB IP 중복 확인
+  DB --> portal_api : 중복 없음
+
+  portal_api -> DB : GSLB 서버 정보 조회 (svr_nm)
+  DB --> portal_api : 서버 정보 반환
+
+  portal_api -> GSLB : GSLB 로그인 요청
+  GSLB --> portal_api : 인증 완료
+
+  portal_api -> GSLB : GSLB IP(서비스) 등록 요청\n(servicename, ip, port, weight)
+  GSLB --> portal_api : 등록 완료
+
+  portal_api -> GSLB : HealthCheck 모니터 바인딩 요청
+  GSLB --> portal_api : 바인딩 완료
+
+  portal_api -> GSLB : GSLB 서버-IP(서비스) 바인딩 요청
+  GSLB --> portal_api : 바인딩 완료
+
+  portal_api -> GSLB : GSLB Config Sync 요청
+  GSLB --> portal_api : Sync 완료
+
+  portal_api -> DB : GSLB IP 정보 저장
+  console_api <- portal_api : GSLB IP 생성 완료 응답
+  actor <- console_api : GSLB IP 생성 완료 응답
+
+== GSLB IP(service) 삭제 ==
+  actor -> console_api : GSLB IP 삭제 요청
+  console_api -> portal_api : GSLB IP 삭제 요청 전달 (ipName 포함)
+
+  portal_api -> DB : GSLB IP 정보 조회
+  DB --> portal_api : IP 정보 반환
+
+  portal_api -> DB : 해당 GSLB 서버 정보 조회
+  DB --> portal_api : 서버 정보 반환
+
+  portal_api -> GSLB : GSLB 로그인 요청
+  GSLB --> portal_api : 인증 완료
+
+  portal_api -> GSLB : GSLB IP(서비스) 존재 여부 확인
+  GSLB --> portal_api : 서비스 존재 확인 완료
+
+  portal_api -> GSLB : GSLB 서버-IP(서비스) 바인딩 해제 요청
+  GSLB --> portal_api : 바인딩 해제 완료
+
+  portal_api -> GSLB : GSLB IP(서비스) 삭제 요청
+  GSLB --> portal_api : IP(서비스) 삭제 완료
+
+  portal_api -> GSLB : GSLB 서버로부터 IP(서비스) 삭제 요청
+  GSLB --> portal_api : 서버 IP(서비스) 삭제 완료
+
+  portal_api -> GSLB : GSLB Config Sync 요청
+  GSLB --> portal_api : Sync 완료
+
+  portal_api -> DB : GSLB IP 상태 업데이트\n(ActiveYn=N, DelDttm, IpStCd=REQ006)
+
+  console_api <- portal_api : GSLB IP 삭제 완료 응답
+  actor <- console_api : GSLB IP 삭제 완료 응답
+
+== GSLB IP(service) 상태 조회 ==
+  actor -> console_api : GSLB IP 상태 조회 요청
+  console_api -> portal_api : GSLB IP 상태 조회 요청 전달 (ipName 포함)
+
+  portal_api -> DB : GSLB IP 정보 조회
+  DB --> portal_api : IP 정보 반환
+
+  portal_api -> GSLB : GSLB 로그인 요청
+  GSLB --> portal_api : 인증 완료
+
+  portal_api -> GSLB : GSLB IP 상태 조회 요청
+  GSLB --> portal_api : 상태 정보 반환 (가중치 포함)
+
+  console_api <- portal_api : GSLB IP 상태 조회 응답
+  actor <- console_api : GSLB IP 상태 조회 응답
+
+== GSLB IP(service) List 조회 ==
+  actor -> console_api : GSLB IP 목록 조회 요청
+  console_api -> portal_api : GSLB IP 목록 조회 요청 전달 (svrSq 포함)
+
+  portal_api -> DB : GSLB 서버 존재 여부 확인
+  DB --> portal_api : 서버 정보 반환
+
+  portal_api -> DB : GSLB IP 목록 조회 (해당 svrSq)
+  DB --> portal_api : GSLB IP 리스트 반환
+
+  portal_api -> portal_api : JSON 응답 포맷 구성\n(ip, port, weight, healthcheck 등)
+
+  console_api <- portal_api : GSLB IP 목록 JSON 응답 반환
+  actor <- console_api : GSLB IP 목록 조회 완료
+
+== GSLB IP(service) 업데이트 ==
+  actor -> console_api : GSLB IP 업데이트 요청
+  console_api -> portal_api : GSLB IP 업데이트 요청 전달 (ipName 포함)
+
+  portal_api -> portal_api : 파라미터 유효성 검사
+  portal_api -> DB : 기존 GSLB IP 정보 조회
+  DB --> portal_api : GSLB IP 정보 반환
+
+  portal_api -> DB : 연결된 GSLB 서버 정보 조회
+  DB --> portal_api : GSLB 서버 정보 반환
+
+  portal_api -> GSLB : GSLB 로그인 요청
+  GSLB --> portal_api : 인증 완료
+
+  portal_api -> GSLB : 기존 GSLB IP(서비스) 존재 확인
+  GSLB --> portal_api : IP(서비스) 존재 확인 완료
+
+  portal_api -> GSLB : 서버-IP(서비스) 바인딩 해제 요청
+  GSLB --> portal_api : 바인딩 해제 완료
+
+  portal_api -> GSLB : 기존 GSLB IP(서비스) 삭제 요청
+  GSLB --> portal_api : IP(서비스) 삭제 완료
+
+  portal_api -> GSLB : GSLB 서버에서 IP 삭제 요청
+  GSLB --> portal_api : 삭제 완료
+
+  portal_api -> GSLB : GSLB 설정 Sync 요청
+  GSLB --> portal_api : Sync 완료
+
+  portal_api -> DB : 기존 GSLB IP(서비스) 비활성 처리 (ActiveYn=N, DelDttm 등)
+
+  portal_api -> portal_api : 내부적으로 createGslbIp(request) 재호출\n(createGslbIp 로직 동일하게 수행)
+
+  console_api <- portal_api : GSLB IP 업데이트 완료 응답
+  actor <- console_api : GSLB IP 업데이트 완료
+end
+deactivate actor
+@enduml

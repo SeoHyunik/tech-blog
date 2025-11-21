@@ -24,7 +24,7 @@ public enum CskAsyncJobCmd {
 
   private static Map<String, String> queryAsyncJobResult() {
     Map<String, String> params = new HashMap<>();
-    params.put("jobid", "f48de769b2b62ecf7062ec53539aa7e0");      // 필수: JOB ID
+    params.put("jobid", "36f88e976316aac86f2f35d45fbce74f");      // 필수: JOB ID
     params.put("response", "json");                               // 선택: 응답 형식
     return params;
   }

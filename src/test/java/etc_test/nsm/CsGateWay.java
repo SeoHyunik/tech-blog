@@ -1,6 +1,6 @@
 package etc_test.nsm;
 
-import etc_test.nsm.commands.CskAsyncJobCmd;
+import etc_test.nsm.commands.CskWafCmd;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -15,16 +15,16 @@ public class CsGateWay {
 
   public static void main(String[] args) throws Exception {
     // 테스트 환경 API Key 및 Secret Key 설정
-    String cloudstackAPIKey = "IAN6O0gYfcE1GQhScBKvaBy4QLoRC4TDTaFAPuGn4o7FLvmPC8juhOIVJbFbx4WwqpHMqyLGmbT2X7_V6E-Tuw";
-    String cloudstackSecretKey = "9CUoaDNxuXA_QqPrlznquWwPwTA3kdMoOS59kVROr1f1079dFqIScLXFiWxrKV2P8Hs2wvnwk_syUtnNFdfryA";
+    String cloudstackAPIKey = "UqaGQ8_v_8JkLMb1FAR7iiCSKbiWQKp9wLcI5GTMEleK4zXretmxAAf02W5YbgDqbqfWWMeNmzNsLf1ifyAFVA";
+    String cloudstackSecretKey = "dhcBaJWUHSl0jHEEbbGRRNHwwGcoosTYF2z-M39j804qQ9wuLe_9lHRcSkM0VCa7QyvOvdBk-1E0xA-9l6zuRA";
 
     // 사용할 API 명령어 선택 (예: CREATE_FIREWALL_RULE)
 //    CskPortForwardingRuleCmd selectedCommand = CskPortForwardingRuleCmd.DELETE_PORTFORWARDING_RULE;
-//    CskFireWallRuleCmd selectedCommand = CskFireWallRuleCmd.LIST_FIREWALL_RULES;
-    CskAsyncJobCmd selectedCommand = CskAsyncJobCmd.QUERY_ASYNC_JOB;
+//    CskFireWallRuleCmd selectedCommand = CskFireWallRuleCmd.CREATE_FIREWALL_RULE;
+//    CskAsyncJobCmd selectedCommand = CskAsyncJobCmd.QUERY_ASYNC_JOB;
 //    CskStaticNatCmd selectedCommand = CskStaticNatCmd.LIST_STATIC_NATS;
 //    CskStaticRouteCmd selectedCommand = CskStaticRouteCmd.LIST_STATIC_ROUTES;
-//    CskWafCmd selectedCommand = CskWafCmd.CREATE_WAF;
+    CskWafCmd selectedCommand = CskWafCmd.LIST_WAF_WEBSITES;
 //    CskWafProCmd selectedCommand = CskWafProCmd.DELETE_WAFPRO;
 
     // 요청 파라미터 설정 (Enum에서 가져옴)

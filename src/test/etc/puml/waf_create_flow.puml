@@ -1,0 +1,47 @@
+@startuml
+skinparam minClassWidth 100
+skinparam ParticipantPadding 20
+
+actor User
+participant "API Gateway" as GW
+participant "Spring Service (createWAF)" as Service
+participant "Redisson (Redis)" as Redisson
+database "DB (WafSvcDAO)" as DB
+participant "CloudStack API" as CloudStack
+
+activate User
+
+group WAF 생성 요청
+
+== Redisson 락 획득 ==
+
+User -> GW : HTTP POST /createWAF
+GW -> Service : 요청 전달
+
+Service -> Redisson : tryLock("waf-create:WAF_NAME")
+alt 락 획득 실패
+  Redisson --> Service : false
+  Service -> User : 처리 중입니다. 잠시 후 다시 시도해주세요.
+else 락 획득 성공
+  Redisson --> Service : true
+
+  Service -> DB : WAF 이름 중복 검사
+  DB --> Service : 중복 여부 응답
+  alt 이름 중복됨
+    Service -> User : WAF 이름이 중복됩니다.
+  else 이름 사용 가능
+    Service -> CloudStack : createVM()
+    CloudStack --> Service : jobId, vmId
+
+    Service -> DB : insert WafSvc (wafId, name, port 등)
+    Service -> DB : insert Billing
+
+    Service -> User : WAF 생성 완료 + jobId
+  end
+
+  Service -> Redisson : unlock()
+end
+
+end
+deactivate User
+@enduml

@@ -5,7 +5,9 @@ import java.util.Map;
 
 public enum CskWafCmd {
   CREATE_WAF("createWAF", createWAF()),
-  DELETE_WAF("deleteWAF", deleteWAF());
+  DELETE_WAF("deleteWAF", deleteWAF()),
+  LIST_WAF_WEBSERVERS("listWAFWebServers", listWAFWebServers()),
+  LIST_WAF_WEBSITES("listWAFWebSites", listWAFWebSites());
 
   private final String command;
   private final Map<String, String> params;
@@ -41,6 +43,22 @@ public enum CskWafCmd {
   private static Map<String, String> deleteWAF() {
     Map<String, String> params = new HashMap<>();
     params.put("id", "4601");                                         // 필수: WAF ID
+    params.put("zoneid", "e09f2ae7-af8e-43da-8174-48ed3e32645c");     // 필수: Zone ID
+    params.put("response", "json");                                   // 선택: 응답 형식
+    return params;
+  }
+
+  private static Map<String, String> listWAFWebServers() {
+    Map<String, String> params = new HashMap<>();
+    params.put("id", "4674");                                         // 필수: WAF ID
+    params.put("zoneid", "e09f2ae7-af8e-43da-8174-48ed3e32645c");     // 필수: Zone ID
+    params.put("response", "json");                                   // 선택: 응답 형식
+    return params;
+  }
+
+  private static Map<String, String> listWAFWebSites() {
+    Map<String, String> params = new HashMap<>();
+    params.put("id", "4674");                                         // 필수: WAF ID
     params.put("zoneid", "e09f2ae7-af8e-43da-8174-48ed3e32645c");     // 필수: Zone ID
     params.put("response", "json");                                   // 선택: 응답 형식
     return params;
